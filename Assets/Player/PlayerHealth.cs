@@ -102,7 +102,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 		if (rb) { rb.linearVelocity = Vector2.zero; rb.angularVelocity = 0f; }
 
 		// 게임오버 연동(있을 때만)
-		// if (GameOverManager.Instance) GameOverManager.Instance.GameOver();
+		 if (GameOverManager.Instance) GameOverManager.Instance.GameOver();
 
 		// 씬 재시작 예약
 		Invoke(nameof(RestartScene), restartDelay);

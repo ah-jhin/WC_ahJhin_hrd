@@ -272,4 +272,6 @@ public class PlayerMovement : MonoBehaviour
 		if (!isGrounded && v < -0.1f) return Vector2.down;
 		return new Vector2(sr.flipX ? -1f : 1f, 0f);
 	}
+    public bool IsDashing => isDashing;      // 게터 공개
+                                             // (필드 isDashing은 기존 private 유지)
 }

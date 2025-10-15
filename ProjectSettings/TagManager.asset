@@ -12,6 +12,7 @@ TagManager:
   - WeakPoint
   - block
   - Enemy
+  - Pain
   layers:
   - Default
   - TransparentFX
