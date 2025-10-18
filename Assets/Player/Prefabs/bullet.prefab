@@ -181,4 +181,5 @@ MonoBehaviour:
   lifetime: 3
   blockTag: block
   defaultDamage: 1
-  defaultWeakMultiplier: 1.5
+  defaultWeakMultiplier: 3
+  debugLog: 0

@@ -42,17 +42,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 8343151752060820181}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3d6a4fcf407e2d846985f5debb0a4e1d, type: 3}
+  m_Script: {fileID: 11500000, guid: dff50fa1c281d1c4285d155cede5a934, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WP_Pistol
-  bulletPrefab: {fileID: 6785224070344415373, guid: beff8b16d66eb954c83969df5e697594, type: 3}
+  data: {fileID: 11400000, guid: b0c09c2426673bf44b457480bb740afd, type: 2}
   firePoint: {fileID: 0}
-  sfx: {fileID: 2485170201924480852}
-  sfxShoot: {fileID: 8300000, guid: f3ddda80b413ed447a4d3f7fa77b3b76, type: 3}
   pm: {fileID: 0}
-  weaponDamage: 3
-  weaponWeakMul: 1.5
-  bulletSpeed: 22
+  sfx: {fileID: 0}
+  spawnOffset: 0.6
 --- !u!82 &2485170201924480852
 AudioSource:
   m_ObjectHideFlags: 0

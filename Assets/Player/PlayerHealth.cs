@@ -43,7 +43,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 		lastHitTime = Time.time;
 
 		// 2) 최종 데미지 계산(약점 적용이 필요 없으면 아래 한 줄로 대체: int final = amount;)
-		int final = weak ? Mathf.RoundToInt(amount * weakMultiplier) : amount;
+		int final = amount + (weak ? Mathf.RoundToInt(weakMultiplier) : 0);
 
 		// 3) 체력 감소
 		currentHP = Mathf.Max(0, currentHP - final);

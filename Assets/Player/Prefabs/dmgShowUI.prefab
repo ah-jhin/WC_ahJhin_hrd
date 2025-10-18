@@ -150,5 +150,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageNumberUI
   label: {fileID: 0}
-  riseSpeed: 60
-  life: 1.5
+  riseSpeed: 180
+  life: 1.1

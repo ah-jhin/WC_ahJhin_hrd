@@ -19,7 +19,7 @@ public class UIHUD : MonoBehaviour
     // HP 갱신
     public void SetHP(int cur, int max){
         hpBar.maxValue = max; hpBar.value = cur;
-        hpValue.text = $"{cur} / {max}";
+        hpValue.text = $"{cur}"; //  / {max}
     }
 
     // 무기 갱신

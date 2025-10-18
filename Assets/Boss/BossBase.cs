@@ -81,7 +81,7 @@ public class BossBase : MonoBehaviour, IDamageable
     public void TakeDamage(int amount, bool weak, float weakMultiplier)
     {
         // 1) 최종 데미지 계산(약점 보정)
-        int final = weak ? Mathf.RoundToInt(amount * weakMultiplier) : amount;
+        int final = amount + (weak ? Mathf.RoundToInt(weakMultiplier) : 0);
         final = Mathf.Max(0, final);
 
         // 2) 체력 감소 및 UI 반영
@@ -125,6 +125,6 @@ public class BossBase : MonoBehaviour, IDamageable
             hpSlider.maxValue = maxHP;
             hpSlider.value = currentHP;
         }
-        if (hpText) hpText.text = $"{currentHP} / {maxHP}";
+        if (hpText) hpText.text = $"{currentHP}";
     }
 }

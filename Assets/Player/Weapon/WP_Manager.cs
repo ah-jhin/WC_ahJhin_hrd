@@ -1,59 +1,45 @@
 using UnityEngine;
 
 /// <summary>
-/// WP_Manager 스크(교정본)
-/// - 슬롯0=권총, 1~2=보급
-/// - Z 또는 Fire1로 발사, A로 순환, 1~3 직접 선택
-/// - 활성 무기의 public void Shoot()만 있으면 동작
-/// - HUD 갱신은 무기 교체/시작 시점에만 호출
+/// 무기 관리(입력/교체/발사 쿨타임만 담당).
+/// - 발사 간격은 활성 무기의 IWeaponInfo.FireInterval을 사용.
+/// - Z 또는 Fire1을 누르고 있으면 자동 연사.
+/// - 무기 탄약 0이 되면 자동 제거 후 기본무기로 복귀.
 /// </summary>
 public class WP_Manager : MonoBehaviour
 {
     [Header("무기 슬롯 (0=권총, 1~2=보급)")]
-    public GameObject[] weaponSlots = new GameObject[3];
+    public GameObject[] weaponSlots = new GameObject[3]; // 슬롯 컨테이너(무기 오브젝트)
 
     [Header("입력")]
-    public KeyCode nextKey = KeyCode.A;    // 무기 교체
-    public KeyCode shootKey = KeyCode.Z;   // 발사
-    public UIHUD hud;                      // HUD 참조(선택)
-
-    [Header("발사 공통 쿨타임")]
-    public float fireRate = 6f;            // 초당 발사수(예: 6 = 0.166s)
-    private float _nextFireTime;           // 다음 발사 가능 시각
-
-    private int _cur = 0;                  // 현재 슬롯 인덱스(0~2)
+    public KeyCode nextKey = KeyCode.A;          // 무기 순환
+    public KeyCode shootKey = KeyCode.Z;         // 발사
+    public UIHUD hud;                             // HUD 참조(선택)
 
     [Header("권총 프리팹")]
-    public GameObject pistolPrefab;        // 슬롯0이 비었을 때 런타임 스폰
+    public GameObject pistolPrefab;              // 시작 시 0번 비면 스폰
+
+    int _cur = 0;                                // 현재 슬롯
+    float _nextFireTime;                         // 다음 발사 가능 시각
 
     void Start()
     {
-        // 슬롯0이 비면 권총 프리팹을 자식으로 생성
+        // 0번 슬롯 보장
         if (weaponSlots[0] == null && pistolPrefab != null)
         {
             weaponSlots[0] = Instantiate(pistolPrefab, transform);
             weaponSlots[0].name = "Pistol(runtime)";
-            weaponSlots[0].SetActive(true);
         }
-
-        // 현재 슬롯만 활성화(초기값=0)
-        for (int i = 0; i < weaponSlots.Length; i++)
-            if (weaponSlots[i] != null) weaponSlots[i].SetActive(i == 0);
-
-        _cur = 0;
+        ActivateCurrent(); // 0번 활성화
         _nextFireTime = Time.time;
-
-        // ★ HUD 초기 갱신은 Start에서 한 번만
-        RefreshHUDWeapon();
     }
 
     void Update()
     {
-        HandleSwapInput();   // 무기 교체 입력
-        HandleFireInput();   // 발사 입력
+        HandleSwapInput();
+        HandleFireInput(); // 자동연사
     }
 
-    /// <summary>무기 교체 입력(A, 1~3)</summary>
     void HandleSwapInput()
     {
         if (Input.GetKeyDown(nextKey)) SwapNext();
@@ -62,102 +48,97 @@ public class WP_Manager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Alpha3)) SwapTo(2);
     }
 
-    /// <summary>발사 입력 처리(Fire1 또는 Z)</summary>
     void HandleFireInput()
     {
         bool firePressed = Input.GetButton("Fire1") || Input.GetKey(shootKey);
         if (!firePressed) return;
+
+        var go = GetActiveWeapon(); if (!go) return;
+
+        // 무기별 발사 간격 사용
+        var wi = go.GetComponent<IWeaponInfo>();
+        float interval = wi != null ? Mathf.Max(0.01f, wi.FireInterval) : 0.2f;
         if (Time.time < _nextFireTime) return;
 
-        var active = GetActiveWeapon();
-        if (active == null) return;
+        go.SendMessage("Shoot", SendMessageOptions.DontRequireReceiver);
+        _nextFireTime = Time.time + interval;
 
-        // 활성 무기의 Shoot() 호출(없어도 에러 없음)
-        active.SendMessage("Shoot", SendMessageOptions.DontRequireReceiver);
+        // HUD 탄약 갱신(구현 시)
+        if (hud && wi != null) hud.SetWeapon(wi.Icon, wi.DisplayName, wi.Ammo, wi.IsInfinite);
 
-        _nextFireTime = Time.time + 1f / Mathf.Max(0.01f, fireRate);
+        // 비무한 + 탄약 0이면 제거
+        if (wi != null && !wi.IsInfinite && wi.Ammo <= 0)
+            OnWeaponEmpty(go.GetComponent<WP_Pistol>()); // 해당 무기 타입 전달(없으면 무시)
     }
 
-    /// <summary>다음 무기로 순환(빈 슬롯은 건너뜀)</summary>
+    // 무기 비었을 때 호출됨(무기가 SendMessageUpwards로 부름)
+    void OnWeaponEmpty(object _)
+    {
+        var go = GetActiveWeapon(); if (!go) return;
+
+        // 0번이면 남겨두고, 보급(1~2)이면 제거 후 0번 복귀
+        if (_cur > 0)
+        {
+            Destroy(go);
+            weaponSlots[_cur] = null;
+            _cur = 0;
+            ActivateCurrent();
+        }
+    }
+    // 보급 상자 등이 호출: 무기 프리팹을 슬롯(1~2)에 장착
+    public bool AddWeapon(GameObject weaponPrefab, bool select = true)
+    {
+        if (!weaponPrefab) return false;
+
+        // 1) 빈 슬롯 찾기(0은 기본 무기이므로 1부터)
+        int slot = -1;
+        for (int i = 1; i < weaponSlots.Length; i++)
+            if (weaponSlots[i] == null) { slot = i; break; }
+        if (slot == -1) return false; // 빈 슬롯 없음
+
+        // 2) 인스턴스 생성 후 장착
+        var go = Instantiate(weaponPrefab, transform);
+        weaponSlots[slot] = go;
+
+        // 3) 선택 여부
+        if (select) { _cur = slot; ActivateCurrent(); }
+        else        { go.SetActive(false); }
+
+        return true;
+    }
+
     public void SwapNext()
     {
         int start = _cur;
         do { _cur = (_cur + 1) % weaponSlots.Length; }
         while (weaponSlots[_cur] == null && _cur != start);
-
-        ActivateCurrent();   // ★ 여기서 HUD도 갱신됨
+        ActivateCurrent();
     }
 
-    /// <summary>특정 인덱스로 교체</summary>
     public void SwapTo(int index)
     {
         if (index < 0 || index >= weaponSlots.Length) return;
         if (weaponSlots[index] == null) return;
-        _cur = index;
-        ActivateCurrent();   // ★ 여기서 HUD도 갱신됨
+        _cur = index; ActivateCurrent();
     }
 
-    /// <summary>현재 슬롯만 활성화 + HUD 갱신</summary>
     void ActivateCurrent()
     {
         for (int i = 0; i < weaponSlots.Length; i++)
             if (weaponSlots[i] != null) weaponSlots[i].SetActive(i == _cur);
 
-        // 교체 직후 바로 발사 가능
-        _nextFireTime = Mathf.Min(_nextFireTime, Time.time);
+        // HUD 갱신
+        var go = GetActiveWeapon();
+        var wi = go ? go.GetComponent<IWeaponInfo>() : null;
+        if (hud && wi != null) hud.SetWeapon(wi.Icon, wi.DisplayName, wi.Ammo, wi.IsInfinite);
 
-        Debug.Log($"[WP_Manager] 현재 무기 슬롯: {_cur + 1}");
-
-        // ★ 무기 교체 시점에만 HUD 갱신
-        RefreshHUDWeapon();
+        // 즉시 발사 가능
+        _nextFireTime = Time.time;
     }
 
-    /// <summary>활성 무기 반환</summary>
     GameObject GetActiveWeapon()
     {
         if (_cur < 0 || _cur >= weaponSlots.Length) return null;
         return weaponSlots[_cur];
-    }
-
-    /// <summary>HUD에 무기 정보 반영(IWeaponInfo 구현 무기만)</summary>
-    void RefreshHUDWeapon()
-    {
-        if (!hud) return;
-        var go = GetActiveWeapon();
-        if (!go) { hud.SetWeapon(null, "", 0, true); return; }
-
-        var w = go.GetComponent<IWeaponInfo>(); // 무기가 구현하면 HUD 표시 가능
-        if (w != null) hud.SetWeapon(w.Icon, w.DisplayName, w.Ammo, w.IsInfinite);
-    }
-
-    /// <summary>보급 무기 지급: 1→2 채우고, 가득 차면 2번 교체</summary>
-    public void AddWeapon(GameObject newWeaponPrefab)
-    {
-        if (newWeaponPrefab == null) return;
-
-        if (weaponSlots[1] == null)
-        {
-            weaponSlots[1] = Instantiate(newWeaponPrefab, transform);
-            weaponSlots[1].SetActive(false);
-            _cur = 1; ActivateCurrent();
-            Debug.Log($"[WP_Manager] 무기 획득(슬롯2): {newWeaponPrefab.name}");
-            return;
-        }
-
-        if (weaponSlots[2] == null)
-        {
-            weaponSlots[2] = Instantiate(newWeaponPrefab, transform);
-            weaponSlots[2].SetActive(false);
-            _cur = 2; ActivateCurrent();
-            Debug.Log($"[WP_Manager] 무기 획득(슬롯3): {newWeaponPrefab.name}");
-            return;
-        }
-
-        // 두 슬롯이 모두 찼으면 2번 교체
-        Destroy(weaponSlots[2]);
-        weaponSlots[2] = Instantiate(newWeaponPrefab, transform);
-        weaponSlots[2].SetActive(false);
-        _cur = 2; ActivateCurrent();
-        Debug.Log($"[WP_Manager] 무기 교체(슬롯3): {newWeaponPrefab.name}");
     }
 }
