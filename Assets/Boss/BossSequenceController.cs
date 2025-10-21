@@ -1,112 +1,118 @@
-// Assets/Boss/BossSequenceController.cs
+﻿// Assets/Boss/BossSequenceController.cs
 using UnityEngine;
-using System.Collections;
 using UnityEngine.UI;
 using TMPro;
 
-[System.Serializable]
-public class BossEntry
-{
-    public GameObject prefab;
-    public int overrideMaxHP = 0;
-    public string displayName;
-    public AudioClip bgm;
-}
-
+/// <summary>
+/// Q를 "한 번" 눌렀을 때: 보스 스폰 + 보스바 등장 + HP충전 + BGM 재생.
+/// HP=0이 되면 BossBase가 알아서 HideBar(), Die() 호출. 여기선 BGM만 정리.
+/// </summary>
 public class BossSequenceController : MonoBehaviour
 {
-    [Header("Sequence")]
-    public BossEntry[] bosses;     // 0=���콺, 1=�����̵���
-    public Transform spawnPoint;
+    [Header("보스 스폰")]
+    public GameObject bossPrefab;        // BossBase가 붙은 프리팹
+    public Vector3 bossWorldPos = new Vector3(8, 2, 0); // 고정 등장 위치
 
-    [Header("Shared UI (reuse)")]
+    [Header("보스바(UI 참조) - Screen Space Camera 캔버스의 자식")]
+    public RectTransform bossBarRoot;
     public Slider hpSlider;
     public TextMeshProUGUI hpText;
-    public TMP_Text nameText;
+    public Image hpFill;
+    public TextMeshProUGUI nameText;
 
-    [Header("Stage Bindings (scene refs)")]
-    public Transform[] stageSkyPoints;   // SkyPoints(�� ������Ʈ��)
-    public Transform stageBeamSpawnL;    // ���� �� ����
-    public Transform stageBeamSpawnR;    // ������ �� ����
-    public Transform stageFirePointOverride; // (����) firePoint�� ������ ������ ����
+    [Header("연출")]
+    public float barAppearTime = 0.35f;  // 슬라이드 시간
+    public float chargeSeconds = 1.5f;   // HP 충전 연출 시간
+    public AudioClip sfxIntro;           // 등장음
+    public ParticleSystem fxIntro;       // 등장 이펙트
 
-    [Header("Transition")]
-    public float spawnDelay = 1.2f;
-    public AudioSource sfx;
-    public AudioClip bossChangeSfx;
-    public AudioSource music;
-    public Animator screenFx;
+    [Header("BGM")]
+    public AudioSource bgmSource;        // 카메라나 전용 오브젝트의 AudioSource
+    public AudioClip bgmClip;
+    public bool loopBgm = true;
 
-    int _index = -1;
-    BossBase _current;
+    bool spawned = false;
+    BossBase boss;
 
-    void Start() => SpawnNext();
-    void OnDestroy() => Unhook(_current);
-
-    public void SpawnNext() => StartCoroutine(SpawnNextRoutine());
-
-    IEnumerator SpawnNextRoutine()
+    void Update()
     {
-        if (_index >= 0)
+        if (!spawned && Input.GetKeyDown(KeyCode.Q))
+            SpawnBossOnce();
+    }
+
+    void SpawnBossOnce()
+    {
+        spawned = true;
+
+        // 0) 프리체크
+        if (!bossPrefab)
         {
-            if (sfx && bossChangeSfx) sfx.PlayOneShot(bossChangeSfx);
-            if (screenFx) screenFx.SetTrigger("BossChange");
-            yield return new WaitForSeconds(spawnDelay);
+            Debug.LogError("[BossSeq] bossPrefab 미지정");
+            return;
         }
 
-        _index++;
-        if (_index >= bosses.Length) { Debug.Log("[BossSeq] All bosses defeated!"); yield break; }
-
-        var entry = bosses[_index];
-        var go = Instantiate(entry.prefab, spawnPoint ? spawnPoint.position : Vector3.zero, Quaternion.identity);
-        var boss = go.GetComponent<BossBase>();
-
-        // UI ������
-        boss.hpSlider = hpSlider;
-        boss.hpText = hpText;
-
-        // HP �������̵�(Init ���� ����)
-        if (entry.overrideMaxHP > 0) boss.maxHP = entry.overrideMaxHP;
-
-        Hook(boss);
-
-        // �������� ���� �� ���� (���콺/�����̵� �������� BossStage1�� �Ⱦ���)
-        var s1 = boss.GetComponent<BossStage1>();
-        if (s1)
+        // 1) 보스 스폰
+        var go = Instantiate(bossPrefab, bossWorldPos, Quaternion.identity);
+        boss = go ? go.GetComponent<BossBase>() : null;
+        if (!boss)
         {
-            if (stageFirePointOverride) s1.firePoint = stageFirePointOverride;
-            if (stageSkyPoints != null && stageSkyPoints.Length > 0) s1.skyPoints = stageSkyPoints;
-            if (stageBeamSpawnL) s1.beamSpawnL = stageBeamSpawnL;
-            if (stageBeamSpawnR) s1.beamSpawnR = stageBeamSpawnR;
+            Debug.LogError("[BossSeq] bossPrefab에 BossBase가 없습니다.");
+            return;
         }
 
-        // ǥ��/����
-        if (nameText) nameText.text = string.IsNullOrEmpty(entry.displayName) ? go.name : entry.displayName;
-        if (music && entry.bgm) { music.clip = entry.bgm; music.Play(); }
+        // 2) UI 참조 확인(없으면 실패 지점 로그 후 계속 진행하지 않음)
+        if (!bossBarRoot || !hpSlider || !hpText || !hpFill)
+        {
+            Debug.LogError("[BossSeq] 보스바 UI 참조가 비었습니다. bossBarRoot / hpSlider / hpText / hpFill 연결 필요");
+            return;
+        }
+
+        // 3) 보스바 바인딩
+        boss.bossBarRoot = bossBarRoot;
+        boss.hpSlider    = hpSlider;
+        boss.hpText      = hpText;
+        boss.hpFill      = hpFill;
+        if (nameText) boss.nameTextTarget = nameText;
+
+        // 4) 등장 연출 + HP 충전
+        boss.ShowBarWithCharge(chargeSeconds);
+
+        // 5) 등장 효과
+        if (sfxIntro)
+            AudioSource.PlayClipAtPoint(sfxIntro,
+                Camera.main ? Camera.main.transform.position : transform.position, 1f);
+        if (fxIntro)
+            Instantiate(fxIntro, boss.transform.position, Quaternion.identity);
+
+        // 6) BGM
+        if (bgmClip)
+        {
+            if (!bgmSource)
+            {
+                // 없으면 임시 생성해 재생(2D)
+                var src = new GameObject("BGM_Temp").AddComponent<AudioSource>();
+                src.spatialBlend = 0f;
+                src.loop = loopBgm;
+                src.clip = bgmClip;
+                src.Play();
+                bgmSource = src;
+            }
+            else
+            {
+                bgmSource.loop = loopBgm;
+                bgmSource.clip = bgmClip;
+                bgmSource.Play();
+            }
+        }
+
+        // 7) 종료 콜백
+        boss.OnBossDie += OnBossDie;
     }
 
-    void Hook(BossBase b)
-    {
-        Unhook(_current);
-        _current = b;
-        if (_current == null) return;
-        _current.OnBossDie += HandleBossDie;
-        _current.OnHpChanged += HandleHpChanged;
-        HandleHpChanged(_current.GetCurrentHP(), _current.maxHP);
-    }
 
-    void Unhook(BossBase b)
+    void OnBossDie(BossBase b)
     {
-        if (b == null) return;
-        b.OnBossDie -= HandleBossDie;
-        b.OnHpChanged -= HandleHpChanged;
-    }
-
-    void HandleBossDie(BossBase dead) => SpawnNext();
-
-    void HandleHpChanged(int cur, int max)
-    {
-        if (hpSlider) { hpSlider.maxValue = max; hpSlider.value = cur; }
-        if (hpText) { hpText.text = $"{cur} / {max}"; }
+        if (bgmSource && bgmSource.isPlaying) bgmSource.Stop();
+        boss.OnBossDie -= OnBossDie;
     }
 }

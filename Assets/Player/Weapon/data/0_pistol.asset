@@ -17,13 +17,13 @@ MonoBehaviour:
   minDamage: 1
   maxDamage: 3
   weakBonusMin: 2
-  weakBonusMax: 4
+  weakBonusMax: 3
   fireInterval: 0.15
   bulletsPerShot: 1
-  spreadDeg: 1
+  spreadDeg: 2.2
   bulletPrefab: {fileID: 6785224070344415373, guid: beff8b16d66eb954c83969df5e697594, type: 3}
-  bulletSpeed: 15
-  bulletLifetime: 2.5
+  bulletSpeed: 12
+  bulletLifetime: 1.25
   infiniteAmmo: 1
   ammoInitial: 0
   sfxShoot: {fileID: 8300000, guid: f3ddda80b413ed447a4d3f7fa77b3b76, type: 3}

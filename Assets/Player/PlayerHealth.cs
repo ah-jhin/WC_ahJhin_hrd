@@ -8,6 +8,7 @@ using UnityEngine.SceneManagement;
 /// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
+	Rigidbody2D rb; // 넉백에 필요
 	[Header("HP")]
 	public int maxHP = 100;          // 최대 체력
 	public int currentHP;            // 현재 체력
@@ -21,9 +22,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 	[Header("Death")]
 	public float restartDelay = 1.5f;   // 사망 후 재시작 지연
 	private bool isDead = false;        // 사망 플래그
-
 	void Awake()
 	{
+		rb = GetComponent<Rigidbody2D>();               // ← 추가
 		// 시작 체력 초기화
 		currentHP = maxHP;
 		hud?.SetHP(currentHP, maxHP);	// UI 갱신
@@ -87,7 +88,43 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 		}
 		if (sr) sr.enabled = true;
 	}
+// 2) 외부 호출용 Pain 처리 함수
+/// <summary>
+/// 가시/함정/보스 패턴 등 'pain' 태그 피격 처리
+/// min~max: 난수 피해 범위, knockback: 밀리는 힘, srcPos: 공격원점(지금은 미사용)
+/// </summary>
+public void ApplyPain(int min, int max, float knockback, Vector3 srcPos)
+{
+    // 무적 시간 또는 사망 시 무시
+    if (Time.time - lastHitTime < invincibleTime || isDead) return;
+    lastHitTime = Time.time;
 
+    // 1) 난수 피해(정수)
+    int dmg = Random.Range(Mathf.Min(min, max), Mathf.Max(min, max) + 1);
+    currentHP = Mathf.Max(0, currentHP - dmg);
+
+    // 2) 랜덤 방향 넉백(좌/우 랜덤 + 약간 위로)
+    float dir = Random.value < 0.5f ? -1f : 1f;
+    if (rb)
+    {
+#if UNITY_600_0_OR_NEWER
+        rb.AddForce(new Vector2(dir * knockback, knockback * 0.5f), ForceMode2D.Impulse);
+#else
+        rb.AddForce(new Vector2(dir * knockback, knockback * 0.5f), ForceMode2D.Impulse);
+#endif
+    }
+
+    // 3) HUD 갱신 및 데미지 숫자
+    hud?.ShowDamage(transform.position, dmg, Color.red);
+    hud?.SetHP(currentHP, maxHP);
+
+    // 4) 사망 처리
+    if (currentHP <= 0 && !isDead)
+    {
+        isDead = true;
+        OnDead();
+    }
+}
 	/// <summary>사망 로직</summary>
 	void OnDead()
 	{

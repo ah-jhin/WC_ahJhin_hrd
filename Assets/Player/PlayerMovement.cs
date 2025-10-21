@@ -1,277 +1,255 @@
 ﻿using System.Collections;
-using System.Linq;
 using UnityEngine;
 
 /// <summary>
 /// PlayerMovement 스크(전체 교체본)
-/// - 좌우 이동 + 점프(버퍼/가변 높이)
-/// - 회피(Dash): 위/아래/좌/우 지원, 떠버림 최소화
-/// - 회피 트레일, 쿨타임 바, 회피 사운드 훅
+/// - 방향키 좌우 이동 + 점프(버퍼/가변 높이)
+/// - 회피: 위/아래/좌/우, 트레일/쿨타임 바
 /// - FirePoint 좌우 반전 유지
-/// - 외부용 프로퍼티: IsGrounded, GetAimDir()
+/// - Pain 트리거는 PlayerHealth로 전달만 함
 /// </summary>
 public class PlayerMovement : MonoBehaviour
 {
-	[Header("이동 및 점프")]
-	public float moveSpeed = 5f;         // 좌우 이동 속도
-	public float jumpForce = 10f;        // 기본 점프 힘
-	public float highJumpForce = 16f;    // 강화 점프 힘(오브 획득 시)
-	public float jumpTime = 0.3f;        // 점프 키 유지 시 추가 가속 시간
-	public float jumpBufferTime = 0.15f; // 점프 입력 버퍼
-	public float fallMultiplier = 0.5f;  // 물속 낙하 감속 계수
+    [Header("이동 및 점프")]
+    public float moveSpeed = 5f;          // 좌우 이동 속도
+    public float jumpForce = 10f;         // 기본 점프 힘
+    public float highJumpForce = 16f;     // 강화 점프 힘
+    public float jumpTime = 0.3f;         // 점프 키 유지 시 추가 가속
+    public float jumpBufferTime = 0.15f;  // 점프 입력 버퍼
+    public float fallMultiplier = 0.5f;   // 물속 낙하 감속
 
-	[Header("Dash(회피) 설정")]
-	public KeyCode dashKey = KeyCode.C;  // 회피 키
-	public float dashCooldown = 1.0f;    // 회피 쿨타임(초)
-	public float dashDuration = 0.12f;   // 회피 잠금 시간(이 동안 이동 입력 무시)
-	public float dashPowerH = 14f;       // 좌/우 대시 힘
-	public float dashPowerV = 4f;       // 위 대시 힘(떠버림 방지 약간 낮게)
-	public float dashPowerDown = 4f;     // 아래 대시 힘(공중일 때)
+    [Header("Dash(회피)")]
+    public KeyCode dashKey = KeyCode.C;   // 회피 키
+    public float dashCooldown = 1.0f;     // 회피 쿨타임(초)
+    public float dashDuration = 0.12f;    // 회피 잠금 시간
+    public float dashPowerH = 14f;        // 좌/우 대시 힘
+    public float dashPowerV = 4f;         // 위 대시 힘
+    public float dashPowerDown = 4f;      // 아래 대시 힘
 
-	[Header("Dash 시각화")]
-	public TrailRenderer dashTrail;      // 회피 시 트레일(선택)
-	public Transform cooldownBarRoot;    // 발밑 쿨타임 바 부모(보이지 않으면 비워둬도 됨)
-	public SpriteRenderer cooldownBarFill; // 파란 바(Scale.x 0~1로 채움)
+    [Header("Dash 시각화")]
+    public TrailRenderer dashTrail;           // 회피 트레일(선택)
+    public Transform cooldownBarRoot;         // 쿨타임 바 루트
+    public SpriteRenderer cooldownBarFill;    // 바 채움 스프라이트
 
-	[Header("사운드(SFX)")]
-	public AudioSource sfx;              // 같은 오브젝트의 AudioSource(선택)
-	public AudioClip sfxDash;            // 회피 효과음(선택)
+    [Header("사운드(SFX)")]
+    public AudioSource sfx;               // 효과음 소스(선택)
+    public AudioClip sfxDash;             // 회피 SFX(선택)
 
-	[Header("상태")]
-	public bool isGrounded = false;      // 바닥 접지 여부(충돌 이벤트로 관리)
-	public bool isInWater = false;       // 물 영역 여부
+    [Header("상태")]
+    public bool isGrounded = false;       // 바닥 접지
+    public bool isInWater = false;        // 물 영역 여부
 
-	[Header("총구")]
-	public Transform firePoint;          // 총구 위치(좌우 반전용)
+    [Header("총구")]
+    public Transform firePoint;           // FirePoint
 
-	// === 내부 상태 ===
-	Rigidbody2D rb;
-	SpriteRenderer sr;
-	float moveInput;                     // -1,0,1
-	bool isJumping = false;              // 점프 가속 중
-	bool hasAirJumped = false;           // 이중 점프 사용 여부
-	bool hasExtraJump = false;           // 오브로 추가 점프 가능 여부
-	bool useHighJump = false;            // 강화 점프 사용 여부
-	float jumpBufferCounter;             // 점프 버퍼 타이머
-	float jumpTimeCounter;               // 점프 가속 남은 시간
+    [Header("Pain 전달 값(인스펙터 조절)")]
+    public int painMin = 5;               // 난수 최소
+    public int painMax = 10;              // 난수 최대
+    public float painKnockback = 10f;     // 넉백 힘
 
-	bool isDashing = false;              // 회피 중 여부
-	float nextDashTime = 0f;             // 회피 가능 시각
+    // --- 내부 ---
+    Rigidbody2D rb;
+    SpriteRenderer sr;
+    float moveInput = 0f;                 // -1,0,1
+    bool isJumping = false;
+    bool hasAirJumped = false;
+    bool hasExtraJump = false;
+    bool useHighJump = false;
+    float jumpBufferCounter = 0f;
+    float jumpTimeCounter = 0f;
+    bool isDashing = false;
+    float nextDashTime = 0f;
 
-	// 외부에서 참고할 수 있도록 읽기 전용 프로퍼티 제공
-	public bool IsGrounded => isGrounded;
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        sr = GetComponentInChildren<SpriteRenderer>(); // 자식 SR도 허용
+        if (!dashTrail) dashTrail = GetComponentInChildren<TrailRenderer>();
+        if (cooldownBarRoot) cooldownBarRoot.gameObject.SetActive(false);
+        if (dashTrail) { dashTrail.emitting = false; dashTrail.Clear(); }
+    }
 
-	void Awake()
-	{
-		rb = GetComponent<Rigidbody2D>();
-		//sr = GetComponent<SpriteRenderer>();
-		sr = GetComponentInChildren<SpriteRenderer>();   // 자식에 있어도 잡힘
+    void Update()
+    {
+        // 1) 방향키 입력만 사용(A/D 비활성)
+        float h = 0f;
+        if (Input.GetKey(KeyCode.LeftArrow))  h = -1f;
+        if (Input.GetKey(KeyCode.RightArrow)) h =  1f;
+        moveInput = h;
 
-		if (!dashTrail) dashTrail = GetComponentInChildren<TrailRenderer>();
-		if (cooldownBarRoot) cooldownBarRoot.gameObject.SetActive(false); // 기본 숨김
-		if (dashTrail) { dashTrail.emitting = false; dashTrail.Clear(); }  // 시작 시 숨김
-	}
+        // 2) 시선 Flip
+        if (moveInput > 0) sr.flipX = false;
+        else if (moveInput < 0) sr.flipX = true;
 
-	void Update()
-	{
-		// 1) 이동 입력
-		moveInput = Input.GetAxisRaw("Horizontal"); // -1,0,1
+        // 3) 점프 버퍼(X 키)
+        if (Input.GetKeyDown(KeyCode.X)) jumpBufferCounter = jumpBufferTime;
+        else jumpBufferCounter -= Time.deltaTime;
 
-		// 2) 좌우 Flip(시선)
-		if (moveInput > 0) sr.flipX = false;
-		else if (moveInput < 0) sr.flipX = true;
+        if (jumpBufferCounter > 0)
+        {
+            if (isGrounded || !hasAirJumped || hasExtraJump || isInWater)
+            {
+                float force = useHighJump ? highJumpForce : jumpForce;
+#if UNITY_600_0_OR_NEWER
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
+#else
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
+#endif
+                isJumping = true;
+                jumpTimeCounter = jumpTime;
+                jumpBufferCounter = 0f;
 
-		// 3) 점프 입력 버퍼 등록/소모(X 키)
-		if (Input.GetKeyDown(KeyCode.X)) jumpBufferCounter = jumpBufferTime;
-		else jumpBufferCounter -= Time.deltaTime;
+                if (!isGrounded && !isInWater)
+                {
+                    if (hasExtraJump) { hasExtraJump = false; useHighJump = false; }
+                    hasAirJumped = true;
+                }
+            }
+        }
 
-		// 4) 점프 시작 조건(버퍼가 남아있고, 지상/추가점프 가능 등)
-		if (jumpBufferCounter > 0)
-		{
-			if (isGrounded || !hasAirJumped || hasExtraJump || isInWater)
-			{
-				float force = useHighJump ? highJumpForce : jumpForce;
-				rb.linearVelocity = new Vector2(rb.linearVelocity.x, force);
-				isJumping = true;
-				jumpTimeCounter = jumpTime;
-				jumpBufferCounter = 0;
+        // 4) 점프 가변 높이
+        if (Input.GetKey(KeyCode.X) && isJumping && jumpTimeCounter > 0f)
+        {
+#if UNITY_600_0_OR_NEWER
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, useHighJump ? highJumpForce : jumpForce);
+#else
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, useHighJump ? highJumpForce : jumpForce);
+#endif
+            jumpTimeCounter -= Time.deltaTime;
+        }
+        if (Input.GetKeyUp(KeyCode.X)) isJumping = false;
 
-				if (!isGrounded && !isInWater) // 공중에서 시작한 점프면 이중 점프 소모
-				{
-					if (hasExtraJump) { hasExtraJump = false; useHighJump = false; }
-					hasAirJumped = true;
-				}
-			}
-		}
+        // 5) 회피 입력
+        HandleDashInput();
 
-		// 5) 점프 가변 높이: X 유지 동안 위로 추가 가속
-		if (Input.GetKey(KeyCode.X) && isJumping && jumpTimeCounter > 0)
-		{
-			rb.linearVelocity = new Vector2(rb.linearVelocity.x, useHighJump ? highJumpForce : jumpForce);
-			jumpTimeCounter -= Time.deltaTime;
-		}
-		if (Input.GetKeyUp(KeyCode.X)) isJumping = false;
+        // 6) FirePoint 좌우 오프셋 유지
+        if (firePoint)
+        {
+            float ox = 0.3f;
+            firePoint.localPosition = new Vector3(sr.flipX ? -ox : +ox, firePoint.localPosition.y, 0);
+        }
 
-		// 6) 회피 입력 처리(C 키)
-		HandleDashInput();
+        // 7) 쿨타임 바
+        UpdateDashCooldownUI();
+    }
 
-		// 7) FirePoint 좌우 위치 오프셋 유지
-		if (firePoint != null)
-		{
-			float offsetX = 0.3f; // 몸 기준 오른쪽(+)/왼쪽(-) 오프셋
-			firePoint.localPosition = new Vector3(sr.flipX ? -offsetX : +offsetX, firePoint.localPosition.y, 0f);
-		}
+    void FixedUpdate()
+    {
+        if (!isDashing)
+        {
+#if UNITY_600_0_OR_NEWER
+            rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+#else
+            rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+#endif
+        }
 
-		// 8) 회피 쿨타임 바 갱신
-		UpdateDashCooldownUI();
-	}
+        if (isInWater)
+        {
+#if UNITY_600_0_OR_NEWER
+            if (rb.linearVelocity.y < 0) rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * fallMultiplier);
+#else
+            if (rb.linearVelocity.y < 0) rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * fallMultiplier);
+#endif
+        }
+    }
 
-	void FixedUpdate()
-	{
-		// 회피 중에는 이동 입력을 잠깐 무시(짧고 단단한 대시 느낌)
-		if (!isDashing)
-		{
-			rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
-		}
+    // 회피 처리
+    void HandleDashInput()
+    {
+        if (!Input.GetKeyDown(dashKey) || Time.time < nextDashTime || isDashing) return;
 
-		// 물 속 낙하 감속
-		if (isInWater && rb.linearVelocity.y < 0)
-		{
-			rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * fallMultiplier);
-		}
-	}
+        float h = 0f, v = 0f;
+        if (Input.GetKey(KeyCode.LeftArrow))  h = -1f;
+        if (Input.GetKey(KeyCode.RightArrow)) h =  1f;
+        if (Input.GetKey(KeyCode.UpArrow))    v =  1f;
+        if (Input.GetKey(KeyCode.DownArrow))  v = -1f;
 
-	// -----------------------
-	// 회피 입력 및 실행
-	// -----------------------
-	void HandleDashInput()
-	{
-		if (Input.GetKeyDown(dashKey) && Time.time >= nextDashTime && !isDashing)
-		{
-			// 방향 결정: 위/아래 입력이 우선. 없으면 좌/우. 모두 없으면 바라보는 방향.
-			float h = Input.GetAxisRaw("Horizontal"); // -1,0,1
-			float v = Input.GetAxisRaw("Vertical");   // -1,0,1
+        Vector2 dir;
+        if (Mathf.Abs(v) > 0.1f) dir = new Vector2(0, Mathf.Sign(v));
+        else if (Mathf.Abs(h) > 0.1f) dir = new Vector2(Mathf.Sign(h), 0);
+        else dir = new Vector2(sr.flipX ? -1 : 1, 0);
 
-			Vector2 dir;
-			if (Mathf.Abs(v) > 0.1f) dir = new Vector2(0, Mathf.Sign(v));         // ↑ 또는 ↓
-			else if (Mathf.Abs(h) > 0.1f) dir = new Vector2(Mathf.Sign(h), 0);    // ← 또는 →
-			else dir = new Vector2(sr.flipX ? -1 : 1, 0);                          // 시선 기준
+        float power = (dir.y > 0.1f) ? dashPowerV : (dir.y < -0.1f ? dashPowerDown : dashPowerH);
+        StartCoroutine(DashRoutine(dir.normalized, power));
+    }
 
-			float power = (dir.y > 0.1f) ? dashPowerV
-					   : (dir.y < -0.1f) ? dashPowerDown
-					   : dashPowerH;
+    System.Collections.IEnumerator DashRoutine(Vector2 dir, float power)
+    {
+        isDashing = true;
+        nextDashTime = Time.time + dashCooldown;
 
-			StartCoroutine(DashRoutine(dir.normalized, power));
-		}
-	}
+        if (sfx && sfxDash) sfx.PlayOneShot(sfxDash, AudioBus.SFX);
+        if (dashTrail) dashTrail.emitting = true;
 
-	IEnumerator DashRoutine(Vector2 dir, float power)
-	{
-		isDashing = true;
-		nextDashTime = Time.time + dashCooldown;
+#if UNITY_600_0_OR_NEWER
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, rb.linearVelocity.y);
+#else
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, rb.linearVelocity.y);
+#endif
+        rb.AddForce(dir * power, ForceMode2D.Impulse);
 
-		// 회피 사운드(선택)
-		if (sfx && sfxDash) sfx.PlayOneShot(sfxDash, AudioBus.SFX);
+        float end = Time.time + dashDuration;
+        while (Time.time < end) yield return null;
 
-		// 트레일 ON
-		if (dashTrail) dashTrail.emitting = true;
+        if (dashTrail) dashTrail.emitting = false;
+        isDashing = false;
+    }
 
-		// 기존 속도를 약간 줄이고, 순간 임펄스 부여(중력은 유지 → 떠버림 최소화)
-		rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, rb.linearVelocity.y);
-		rb.AddForce(dir * power, ForceMode2D.Impulse);
+    void UpdateDashCooldownUI()
+    {
+        if (!cooldownBarRoot || !cooldownBarFill) return;
+        float remain = Mathf.Clamp01((nextDashTime - Time.time) / dashCooldown);
 
-		// 짧은 잠금 시간 동안 이동 입력 무시
-		float end = Time.time + dashDuration;
-		while (Time.time < end) yield return null;
+        if (remain <= 0f) { cooldownBarRoot.gameObject.SetActive(false); return; }
 
-		// 트레일 OFF
-		if (dashTrail) dashTrail.emitting = false;
+        cooldownBarRoot.gameObject.SetActive(true);
+        var s = cooldownBarFill.transform.localScale;
+        s.x = remain;                      // 1→0 형태면 1 - remain 쓰면 됨
+        cooldownBarFill.transform.localScale = s;
+    }
 
-		isDashing = false;
-	}
+    // 접지/물/오브
+    void OnCollisionEnter2D(Collision2D c)
+    {
+        if (c.contactCount > 0 && c.GetContact(0).normal.y > 0.7f)
+        { isGrounded = true; hasAirJumped = false; isJumping = false; }
+    }
+    void OnCollisionExit2D(Collision2D c) { isGrounded = false; }
 
-	void UpdateDashCooldownUI()
-	{
-		if (!cooldownBarRoot || !cooldownBarFill) return;
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Water")) isInWater = true;
 
-		float remain = Mathf.Clamp01((nextDashTime - Time.time) / dashCooldown);
-		if (remain <= 0f)
-		{
-			cooldownBarRoot.gameObject.SetActive(false);
-			return;
-		}
+        if (other.CompareTag("BlueJumpOrb"))
+        { hasExtraJump = true; useHighJump = false; other.gameObject.SetActive(false); Invoke(nameof(ReactivateOrb), 3f); }
 
-		cooldownBarRoot.gameObject.SetActive(true);
-		// 바 채우기: 0→1
-		var s = cooldownBarFill.transform.localScale;
-		s.x = remain;
-		cooldownBarFill.transform.localScale = s;
-	}
+        if (other.CompareTag("RedJumpOrb"))
+        { hasExtraJump = true; useHighJump = true;  other.gameObject.SetActive(false); Invoke(nameof(ReactivateOrb), 3f); }
 
-	// -----------------------
-	// 충돌/트리거로 상태 업데이트
-	// -----------------------
-	void OnCollisionEnter2D(Collision2D collision)
-	{
-		// contactCount 로 개수 확인 후 GetContact(0) 사용
-		if (collision.contactCount > 0 && collision.GetContact(0).normal.y > 0.7f)
-		{
-			isGrounded = true;
-			hasAirJumped = false;
-			isJumping = false;
-		}
-	}
+        // pain은 PlayerHealth로 위임
+        if (other.CompareTag("pain"))
+            GetComponent<PlayerHealth>()?.ApplyPain(painMin, painMax, painKnockback, other.transform.position);
+    }
+    void OnTriggerStay2D(Collider2D other)
+    {
+        if (other.CompareTag("pain"))
+            GetComponent<PlayerHealth>()?.ApplyPain(painMin, painMax, painKnockback, other.transform.position);
+    }
+    void OnTriggerExit2D(Collider2D other)
+    {
+        if (other.CompareTag("Water")) isInWater = false;
+    }
 
-	void OnCollisionExit2D(Collision2D collision)
-	{
-		// 바닥에서 떨어짐
-		isGrounded = false;
-	}
+    void ReactivateOrb() { /* 오브 재활성 자리 */ }
 
-	void OnTriggerEnter2D(Collider2D other)
-	{
-		if (other.CompareTag("Water")) isInWater = true;
+    // 조준 방향
+    public Vector2 GetAimDir()
+    {
+        if (Input.GetKey(KeyCode.UpArrow)) return Vector2.up;
+        if (!isGrounded && Input.GetKey(KeyCode.DownArrow)) return Vector2.down;
+        return new Vector2(sr.flipX ? -1f : 1f, 0f);
+    }
 
-		if (other.CompareTag("BlueJumpOrb")) // 추가 점프(기본)
-		{
-			hasExtraJump = true;
-			useHighJump = false;
-			other.gameObject.SetActive(false);
-			Invoke(nameof(ReactivateOrb), 3f);
-		}
-
-		if (other.CompareTag("RedJumpOrb")) // 추가 점프(강화)
-		{
-			hasExtraJump = true;
-			useHighJump = true;
-			other.gameObject.SetActive(false);
-			Invoke(nameof(ReactivateOrb), 3f);
-		}
-	}
-
-	void OnTriggerExit2D(Collider2D other)
-	{
-		if (other.CompareTag("Water")) isInWater = false;
-	}
-
-	void ReactivateOrb()
-	{
-		// TODO: OrbManager로 교체 가능. 여기서는 비워둠.
-	}
-
-	// -----------------------
-	// 외부에서 쓰기 쉬운 조준 방향 도우미
-	// - 위 입력: 위 발사
-	// - 공중+아래 입력: 아래 발사
-	// - 그 외: 시선 기준 좌/우
-	// -----------------------
-	public Vector2 GetAimDir()
-	{
-		float v = Input.GetAxisRaw("Vertical");
-		if (v > 0.1f) return Vector2.up;
-		if (!isGrounded && v < -0.1f) return Vector2.down;
-		return new Vector2(sr.flipX ? -1f : 1f, 0f);
-	}
-    public bool IsDashing => isDashing;      // 게터 공개
-                                             // (필드 isDashing은 기존 private 유지)
+    public bool IsDashing => isDashing;
 }

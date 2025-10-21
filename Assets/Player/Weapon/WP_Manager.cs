@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;   // Image 사용
 
 /// <summary>
 /// 무기 관리(입력/교체/발사 쿨타임만 담당).
@@ -10,10 +11,13 @@ public class WP_Manager : MonoBehaviour
 {
     [Header("무기 슬롯 (0=권총, 1~2=보급)")]
     public GameObject[] weaponSlots = new GameObject[3]; // 슬롯 컨테이너(무기 오브젝트)
-
+    [Header("HUD 아이콘(선택)")]
+    public Image slot1Icon;   // 1번 슬롯 아이콘    
+    public Image slot2Icon;   // 2번 슬롯 아이콘    
     [Header("입력")]
     public KeyCode nextKey = KeyCode.A;          // 무기 순환
     public KeyCode shootKey = KeyCode.Z;         // 발사
+    public KeyCode dropKey  = KeyCode.F;        // 드랍
     public UIHUD hud;                             // HUD 참조(선택)
 
     [Header("권총 프리팹")]
@@ -38,6 +42,7 @@ public class WP_Manager : MonoBehaviour
     {
         HandleSwapInput();
         HandleFireInput(); // 자동연사
+        HandleDropInput(); 
     }
 
     void HandleSwapInput()
@@ -70,6 +75,24 @@ public class WP_Manager : MonoBehaviour
         if (wi != null && !wi.IsInfinite && wi.Ammo <= 0)
             OnWeaponEmpty(go.GetComponent<WP_Pistol>()); // 해당 무기 타입 전달(없으면 무시)
     }
+    void HandleDropInput()
+{
+    if (!Input.GetKeyDown(dropKey)) return;
+
+    // 권총(슬롯0)은 드랍 금지
+    if (_cur == 0) return;
+
+    var go = GetActiveWeapon();
+    if (!go) return;
+
+    // 현재 무기 파괴 및 슬롯 비우기
+    Destroy(go);
+    weaponSlots[_cur] = null;
+
+    // 권총으로 복귀
+    _cur = 0;
+    ActivateCurrent();      // HUD/아이콘/쿨다운 갱신 포함
+}
 
     // 무기 비었을 때 호출됨(무기가 SendMessageUpwards로 부름)
     void OnWeaponEmpty(object _)
@@ -86,27 +109,47 @@ public class WP_Manager : MonoBehaviour
         }
     }
     // 보급 상자 등이 호출: 무기 프리팹을 슬롯(1~2)에 장착
-    public bool AddWeapon(GameObject weaponPrefab, bool select = true)
+public bool AddWeapon(GameObject weaponPrefab, bool select = true)
+{
+    if (!weaponPrefab) { Debug.LogWarning("[WP_Manager] AddWeapon: prefab=null"); return false; }
+
+    int slot = -1;
+    for (int i = 1; i < weaponSlots.Length; i++)
+        if (weaponSlots[i] == null) { slot = i; break; }
+
+    if (slot == -1)
     {
-        if (!weaponPrefab) return false;
-
-        // 1) 빈 슬롯 찾기(0은 기본 무기이므로 1부터)
-        int slot = -1;
-        for (int i = 1; i < weaponSlots.Length; i++)
-            if (weaponSlots[i] == null) { slot = i; break; }
-        if (slot == -1) return false; // 빈 슬롯 없음
-
-        // 2) 인스턴스 생성 후 장착
-        var go = Instantiate(weaponPrefab, transform);
-        weaponSlots[slot] = go;
-
-        // 3) 선택 여부
-        if (select) { _cur = slot; ActivateCurrent(); }
-        else        { go.SetActive(false); }
-
-        return true;
+        Debug.LogWarning("[WP_Manager] 빈 슬롯(1~2) 없음");
+        return false;
     }
 
+    var go = Instantiate(weaponPrefab, transform);
+    if (!go) { Debug.LogError("[WP_Manager] Instantiate 실패"); return false; }
+
+    // 필수 컴포넌트 점검
+    var wi = go.GetComponent<IWeaponInfo>();
+    if (wi == null) Debug.LogError("[WP_Manager] IWeaponInfo 미구현(예: WP_Pistol 누락)");
+
+    weaponSlots[slot] = go;
+    if (select) { _cur = slot; ActivateCurrent(); } else go.SetActive(false);
+
+    Debug.Log($"[WP_Manager] 슬롯 {slot} 장착: {go.name}");
+    RefreshSlotIcons();
+    return true;
+}
+
+    void RefreshSlotIcons()
+    {
+        void Set(Image img, GameObject go)
+        {
+            if (!img) return;
+            var wi = go ? go.GetComponent<IWeaponInfo>() : null;
+            img.sprite = wi != null ? wi.Icon : null;
+            img.enabled = img.sprite != null;
+        }
+        Set(slot1Icon, (weaponSlots.Length > 1) ? weaponSlots[1] : null);
+        Set(slot2Icon, (weaponSlots.Length > 2) ? weaponSlots[2] : null);
+    }
     public void SwapNext()
     {
         int start = _cur;
@@ -134,6 +177,7 @@ public class WP_Manager : MonoBehaviour
 
         // 즉시 발사 가능
         _nextFireTime = Time.time;
+        RefreshSlotIcons();
     }
 
     GameObject GetActiveWeapon()

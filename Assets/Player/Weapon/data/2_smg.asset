@@ -15,15 +15,15 @@ MonoBehaviour:
   displayName: SMG
   icon: {fileID: 21300000, guid: e5e49028b50de3743811b861edc0de68, type: 3}
   minDamage: 1
-  maxDamage: 2
+  maxDamage: 1
   weakBonusMin: 1
   weakBonusMax: 1
-  fireInterval: 0.07
+  fireInterval: 0.04
   bulletsPerShot: 1
-  spreadDeg: 2.5
-  bulletPrefab: {fileID: 6785224070344415373, guid: beff8b16d66eb954c83969df5e697594, type: 3}
-  bulletSpeed: 40
-  bulletLifetime: 0.33
+  spreadDeg: 7.7
+  bulletPrefab: {fileID: 6785224070344415373, guid: 69ac95405c029cd46a3f980094acfa6c, type: 3}
+  bulletSpeed: 30
+  bulletLifetime: 0.15
   infiniteAmmo: 0
-  ammoInitial: 330
+  ammoInitial: 150
   sfxShoot: {fileID: 8300000, guid: d8498784322a918469276d60e1128c40, type: 3}
