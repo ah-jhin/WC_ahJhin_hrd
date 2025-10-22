@@ -10,6 +10,7 @@ using UnityEngine;
 /// </summary>
 public class PlayerMovement : MonoBehaviour
 {
+    
     [Header("이동 및 점프")]
     public float moveSpeed = 5f;          // 좌우 이동 속도
     public float jumpForce = 10f;         // 기본 점프 힘

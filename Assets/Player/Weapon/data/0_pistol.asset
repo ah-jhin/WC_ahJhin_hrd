@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06024bb0c1ea98b45be3081f3b99d2a5, type: 3}
   m_Name: 0_pistol
   m_EditorClassIdentifier: Assembly-CSharp::WP_Data
-  displayName: Pistol
+  displayName: "\uAD8C\uCD1D"
   icon: {fileID: 21300000, guid: 24b71c222491baf4b8584eb4489fe401, type: 3}
   minDamage: 1
   maxDamage: 3

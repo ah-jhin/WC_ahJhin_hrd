@@ -181,17 +181,19 @@ public void ApplyPain(int min, int max, float knockback, Vector3 srcPos)
         if (bgmAudioSource) bgmAudioSource.Stop();
         if (bgmAudioSource && gameOverMusic)
         {
+            bgmAudioSource.loop = false;
             bgmAudioSource.clip = gameOverMusic;
             bgmAudioSource.Play();
         }
         // 4. 게임오버 UI 표시
         if (gameOverUI) 
             gameOverUI.SetActive(true);
-        // 5. 보스 대사 텍스트 4초간 표시 후 제거 예약
-        if (bossDialogueObject) 
+        // 5. 보스 대사 
+        if (bossDialogueObject)
             bossDialogueObject.SetActive(true);
-        Invoke(nameof(HideBossDialogue), 4f);
-		Invoke(nameof(RemovePlayerObject), 4.1f);
+            
+        Invoke(nameof(HideBossDialogue), 5f);
+		Invoke(nameof(RemovePlayerObject), 5.1f);
 		GameScore.I?.OnPlayerDeath();  // 🔹 여기서 점수 서버 전송
     }
     
