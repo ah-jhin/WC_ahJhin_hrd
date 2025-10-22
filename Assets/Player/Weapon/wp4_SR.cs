@@ -7,9 +7,9 @@ using UnityEngine;
 /// </summary>
 public class WP_SR : MonoBehaviour, IWeaponInfo
 {
-    [Header("참조")]
+    [Header("삽입")]
     public WP_Data data;              // ← 반드시 연결
-    public Transform firePoint;       // 총구(비면 자동탐색)
+    public Transform firePoint;       // 총구(자동탐색)
     public PlayerMovement pm;         // 조준/방향(선택)
     public AudioSource sfx;           // 사운드(선택)
     public float spawnOffset = 0.6f;  // 총구 앞쪽으로 밀어 생성(자기충돌 방지)
@@ -66,18 +66,11 @@ public class WP_SR : MonoBehaviour, IWeaponInfo
                 if (data.bulletLifetime > 0f) Destroy(go, data.bulletLifetime);
             }
 
-            // 안전망(중복 OK): 혹시 Bullet이 없다면 여기서라도 파괴 예약
-            if (data.bulletLifetime > 0f) Destroy(go, data.bulletLifetime);
-
             // 속도 부여
             var rb = go.GetComponent<Rigidbody2D>();
             if (rb)
             {
-#if UNITY_600_0_OR_NEWER
                 rb.linearVelocity = dir * data.bulletSpeed;
-#else
-                rb.linearVelocity = dir * data.bulletSpeed;
-#endif
             }
 
             // 초기 자기충돌 무시(플레이어와)
@@ -97,7 +90,7 @@ public class WP_SR : MonoBehaviour, IWeaponInfo
         if (data.sfxShoot)
         {
             Vector3 pos = Camera.main ? Camera.main.transform.position : transform.position; // 주석: 2D 청취 위치
-            AudioSource.PlayClipAtPoint(data.sfxShoot, pos, 0.66f);  // 주석: 무기 파괴와 무관하게 끝까지 재생
+            AudioSource.PlayClipAtPoint(data.sfxShoot, pos, 0.66f);  // ★ 주석: 무기 파괴와 무관하게 끝까지 재생
         }
 
         // 탄약 소진 시 자기 제거(명세: 탄약 소진하면 사라짐)

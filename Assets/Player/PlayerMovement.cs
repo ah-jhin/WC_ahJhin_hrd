@@ -42,11 +42,6 @@ public class PlayerMovement : MonoBehaviour
     [Header("총구")]
     public Transform firePoint;           // FirePoint
 
-    [Header("Pain 전달 값(인스펙터 조절)")]
-    public int painMin = 5;               // 난수 최소
-    public int painMax = 10;              // 난수 최대
-    public float painKnockback = 10f;     // 넉백 힘
-
     // --- 내부 ---
     Rigidbody2D rb;
     SpriteRenderer sr;
@@ -220,21 +215,6 @@ public class PlayerMovement : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Water")) isInWater = true;
-
-        if (other.CompareTag("BlueJumpOrb"))
-        { hasExtraJump = true; useHighJump = false; other.gameObject.SetActive(false); Invoke(nameof(ReactivateOrb), 3f); }
-
-        if (other.CompareTag("RedJumpOrb"))
-        { hasExtraJump = true; useHighJump = true;  other.gameObject.SetActive(false); Invoke(nameof(ReactivateOrb), 3f); }
-
-        // pain은 PlayerHealth로 위임
-        if (other.CompareTag("pain"))
-            GetComponent<PlayerHealth>()?.ApplyPain(painMin, painMax, painKnockback, other.transform.position);
-    }
-    void OnTriggerStay2D(Collider2D other)
-    {
-        if (other.CompareTag("pain"))
-            GetComponent<PlayerHealth>()?.ApplyPain(painMin, painMax, painKnockback, other.transform.position);
     }
     void OnTriggerExit2D(Collider2D other)
     {

@@ -1,115 +1,94 @@
-﻿// Assets/Boss/BossSequenceController.cs
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// Q를 "한 번" 눌렀을 때: 보스 스폰 + 보스바 등장 + HP충전 + BGM 재생.
-/// HP=0이 되면 BossBase가 알아서 HideBar(), Die() 호출. 여기선 BGM만 정리.
-/// </summary>
 public class BossSequenceController : MonoBehaviour
 {
-    [Header("보스 스폰")]
-    public GameObject bossPrefab;        // BossBase가 붙은 프리팹
-    public Vector3 bossWorldPos = new Vector3(8, 2, 0); // 고정 등장 위치
+    [Header("① 보스 스폰")]
+    public GameObject bossPrefab;
+    public Vector3 bossWorldPos = new Vector3(8,2,0);
 
-    [Header("보스바(UI 참조) - Screen Space Camera 캔버스의 자식")]
+    [Header("② 보스바 UI(Screen Space - Camera 캔버스)")]
     public RectTransform bossBarRoot;
     public Slider hpSlider;
     public TextMeshProUGUI hpText;
     public Image hpFill;
     public TextMeshProUGUI nameText;
 
-    [Header("연출")]
-    public float barAppearTime = 0.35f;  // 슬라이드 시간
-    public float chargeSeconds = 1.5f;   // HP 충전 연출 시간
-    public AudioClip sfxIntro;           // 등장음
-    public ParticleSystem fxIntro;       // 등장 이펙트
+    [Header("③ 보스바 연출")]
+    public float barAppearTime = 0.35f;
+    public float chargeSeconds = 1.5f;
+    public AudioClip sfxIntro;
+    public ParticleSystem fxIntro;
 
-    [Header("BGM")]
-    public AudioSource bgmSource;        // 카메라나 전용 오브젝트의 AudioSource
+    [Header("④ BGM")]
+    public AudioSource bgmSource;
     public AudioClip bgmClip;
     public bool loopBgm = true;
-
-    bool spawned = false;
+    bool spawned=false;
     BossBase boss;
 
     void Update()
     {
-        if (!spawned && Input.GetKeyDown(KeyCode.Q))
-            SpawnBossOnce();
+        if (!spawned && Input.GetKeyDown(KeyCode.Q)) SpawnBossOnce();
     }
 
     void SpawnBossOnce()
     {
-        spawned = true;
+        spawned=true;
 
-        // 0) 프리체크
-        if (!bossPrefab)
-        {
-            Debug.LogError("[BossSeq] bossPrefab 미지정");
-            return;
-        }
-
-        // 1) 보스 스폰
+        if (!bossPrefab) { Debug.LogError("[BossSeq] bossPrefab 미지정"); return; }
         var go = Instantiate(bossPrefab, bossWorldPos, Quaternion.identity);
-        boss = go ? go.GetComponent<BossBase>() : null;
-        if (!boss)
-        {
-            Debug.LogError("[BossSeq] bossPrefab에 BossBase가 없습니다.");
-            return;
-        }
 
-        // 2) UI 참조 확인(없으면 실패 지점 로그 후 계속 진행하지 않음)
-        if (!bossBarRoot || !hpSlider || !hpText || !hpFill)
-        {
-            Debug.LogError("[BossSeq] 보스바 UI 참조가 비었습니다. bossBarRoot / hpSlider / hpText / hpFill 연결 필요");
-            return;
-        }
+        // 씬의 BossBase 찾기(= BossControl에 붙어 있음)
+#if UNITY_2023_1_OR_NEWER
+        boss = FindFirstObjectByType<BossBase>();
+#else
+        boss = FindObjectOfType<BossBase>();
+#endif
+        if (!boss) { Debug.LogError("[BossSeq] BossBase 없음"); return; }
 
-        // 3) 보스바 바인딩
+        // 액터 바인딩
+        boss.BindActor(go.transform);
+
+        // UI 주입 + 연출 파라미터 동기화
         boss.bossBarRoot = bossBarRoot;
-        boss.hpSlider    = hpSlider;
-        boss.hpText      = hpText;
-        boss.hpFill      = hpFill;
-        if (nameText) boss.nameTextTarget = nameText;
+        boss.hpSlider = hpSlider;
+        boss.hpText = hpText;
+        boss.hpFill = hpFill;
+        boss.nameTextTarget = nameText;
+        boss.barAnimTime = barAppearTime;
 
-        // 4) 등장 연출 + HP 충전
+        // 등장 연출
         boss.ShowBarWithCharge(chargeSeconds);
+        if (sfxIntro) AudioSource.PlayClipAtPoint(sfxIntro, Camera.main?Camera.main.transform.position:transform.position, 1f);
+        if (fxIntro) Instantiate(fxIntro, go.transform.position, Quaternion.identity);
 
-        // 5) 등장 효과
-        if (sfxIntro)
-            AudioSource.PlayClipAtPoint(sfxIntro,
-                Camera.main ? Camera.main.transform.position : transform.position, 1f);
-        if (fxIntro)
-            Instantiate(fxIntro, boss.transform.position, Quaternion.identity);
+        // BGM 시작
+        StartOrSwapBgm(bgmClip, loopBgm);
 
-        // 6) BGM
-        if (bgmClip)
-        {
-            if (!bgmSource)
-            {
-                // 없으면 임시 생성해 재생(2D)
-                var src = new GameObject("BGM_Temp").AddComponent<AudioSource>();
-                src.spatialBlend = 0f;
-                src.loop = loopBgm;
-                src.clip = bgmClip;
-                src.Play();
-                bgmSource = src;
-            }
-            else
-            {
-                bgmSource.loop = loopBgm;
-                bgmSource.clip = bgmClip;
-                bgmSource.Play();
-            }
-        }
-
-        // 7) 종료 콜백
+        // 임계치 BGM 교체 감시
+        boss.OnBgmSwapRequest += OnBgmSwapRequest;
         boss.OnBossDie += OnBossDie;
     }
 
-
+    void StartOrSwapBgm(AudioClip clip, bool loop)
+    {
+        if (!clip) return;
+        if (!bgmSource)
+        {
+            var src = new GameObject("BGM_Source").AddComponent<AudioSource>();
+            src.spatialBlend = 0f;
+            bgmSource = src;
+        }
+        bgmSource.loop = loop;
+        bgmSource.clip = clip;
+        bgmSource.Play();
+    }
+    void OnBgmSwapRequest(AudioClip clip, bool loop)
+    {
+        StartOrSwapBgm(clip, loop);
+    }
     void OnBossDie(BossBase b)
     {
         if (bgmSource && bgmSource.isPlaying) bgmSource.Stop();

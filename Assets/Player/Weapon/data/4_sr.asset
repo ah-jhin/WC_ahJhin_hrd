@@ -16,14 +16,14 @@ MonoBehaviour:
   icon: {fileID: 21300000, guid: 693a9b460af8fa44999c7b9237a95429, type: 3}
   minDamage: 30
   maxDamage: 50
-  weakBonusMin: 35
-  weakBonusMax: 65
-  fireInterval: 1.1
+  weakBonusMin: 40
+  weakBonusMax: 50
+  fireInterval: 1.2
   bulletsPerShot: 1
   spreadDeg: 0
   bulletPrefab: {fileID: 6785224070344415373, guid: c8054da77ee8ac848a24b21b83e3d938, type: 3}
   bulletSpeed: 30
   bulletLifetime: 1
   infiniteAmmo: 0
-  ammoInitial: 15
-  sfxShoot: {fileID: 8300000, guid: 828b37a0762875d4eb78ff8866ffad17, type: 3}
+  ammoInitial: 7
+  sfxShoot: {fileID: 8300000, guid: 49f49657faa572f46a38af28fd93cf3c, type: 3}

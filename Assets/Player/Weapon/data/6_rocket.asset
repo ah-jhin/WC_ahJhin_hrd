@@ -14,16 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WP_Data
   displayName: Rocket
   icon: {fileID: 21300000, guid: 9c3a12526f422014c899718f988c8dc2, type: 3}
-  minDamage: 40
-  maxDamage: 40
+  minDamage: 50
+  maxDamage: 50
   weakBonusMin: 0
   weakBonusMax: 0
-  fireInterval: 0.35
+  fireInterval: 0.8
   bulletsPerShot: 1
   spreadDeg: 1
   bulletPrefab: {fileID: 6785224070344415373, guid: 9c39b84938570bf4ba702e56d49a63bf, type: 3}
   bulletSpeed: 20
   bulletLifetime: 2.5
   infiniteAmmo: 0
-  ammoInitial: 15
-  sfxShoot: {fileID: 8300000, guid: f3ddda80b413ed447a4d3f7fa77b3b76, type: 3}
+  ammoInitial: 5
+  sfxShoot: {fileID: 8300000, guid: 3ff94c50ddce1d5478d9a105955c65ac, type: 3}

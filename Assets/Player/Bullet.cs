@@ -69,28 +69,21 @@ public class Bullet : MonoBehaviour
     {
         if (this) Destroy(gameObject);
     }
-
     void OnTriggerEnter2D(Collider2D other)
     {
-        // 무장 전 충돌은 무시하고 1회 경고
         if (!armed)
         {
-            if (!warned)
-            {
-                Debug.LogWarning("[Bullet] 스탯 주입(Inject)이 없어 defaultDamage를 사용합니다. 발사 코드에서 Inject()를 호출하세요.");
-                warned = true;
-            }
+            if (!warned) { Debug.LogWarning("[Bullet] Inject()가 호출되기 전에 충돌했습니다."); warned = true; }
             return;
         }
 
-        // IDamageable에 정수 피해 전달(약점=보너스 더하기)
         var target = other.GetComponent<IDamageable>();
         if (target != null)
         {
-            target.TakeDamage(damage, weak: weakBonus > 0, weakMultiplier: weakBonus);
+            bool isWeak = other.CompareTag("WeakPoint"); // ★ 약점은 태그로만 판정
+            target.TakeDamage(damage, isWeak, weakBonus);
         }
 
-        // 충돌 후 소멸
         Die();
     }
 }

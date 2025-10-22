@@ -83,7 +83,7 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 0
   m_Sprite: {fileID: -6934828699724458808, guid: 7e448c5bbbbc3b94e8bc035e7c17f769, type: 3}
-  m_Color: {r: 1, g: 0.93937296, b: 0.5518868, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -179,7 +179,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lifetime: 0
-  blockTag: block
   defaultDamage: 1
-  defaultWeakMultiplier: 3
-  debugLog: 0
