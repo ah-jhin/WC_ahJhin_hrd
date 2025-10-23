@@ -169,18 +169,16 @@ public class WP_SupplyBox : MonoBehaviour
 
     void PlayPickupSfx(SupplyType t)
     {
-        if (!sfx) return;
         AudioClip clip = null;
-        switch (t)
-        {
-            case SupplyType.Heal:    clip = sfxHeal; break;
-            case SupplyType.Revolver:clip = sfxRevolver; break;
-            case SupplyType.AR:      clip = sfxAR; break;
-            case SupplyType.SR:      clip = sfxSR; break;
-            case SupplyType.Shotgun: clip = sfxShotgun; break;
-            case SupplyType.Rocket:  clip = sfxRocket; break;
-            case SupplyType.SMG:     clip = sfxSMG; break;  // ★
+        switch (t) {
+            case SupplyType.Heal:     clip = sfxHeal; break;
+            case SupplyType.Revolver: clip = sfxRevolver; break;
+            case SupplyType.AR:       clip = sfxAR; break;
+            case SupplyType.SR:       clip = sfxSR; break;
+            case SupplyType.Shotgun:  clip = sfxShotgun; break;
+            case SupplyType.Rocket:   clip = sfxRocket; break;
+            case SupplyType.SMG:      clip = sfxSMG; break;
         }
-        if (clip) sfx.PlayOneShot(clip, sfxVolume);
+        if (clip) AudioSource.PlayClipAtPoint(clip, transform.position, sfxVolume); 
     }
 }

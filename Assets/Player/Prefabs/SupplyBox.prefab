@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 2996466237184685160}
   - component: {fileID: 2944980871450192091}
   - component: {fileID: 2057588225542986011}
-  - component: {fileID: 6874623527237720963}
+  - component: {fileID: -8433823338074253934}
   m_Layer: 0
   m_Name: SupplyBox
   m_TagString: Untagged
@@ -172,16 +172,16 @@ MonoBehaviour:
   sprShotgun: {fileID: 21300000, guid: 4e24e614d974e7d479995ef0ff407a85, type: 3}
   sprRocket: {fileID: 21300000, guid: 9c3a12526f422014c899718f988c8dc2, type: 3}
   sprSMG: {fileID: 21300000, guid: e5e49028b50de3743811b861edc0de68, type: 3}
-  sfx: {fileID: 6874623527237720963}
-  sfxHeal: {fileID: 8300000, guid: a4af800f0e57bb84f97e891f9b821dca, type: 3}
-  sfxRevolver: {fileID: 8300000, guid: abaf1343012a40444ba32a4b30ce6172, type: 3}
-  sfxAR: {fileID: 8300000, guid: abaf1343012a40444ba32a4b30ce6172, type: 3}
-  sfxSR: {fileID: 8300000, guid: abaf1343012a40444ba32a4b30ce6172, type: 3}
-  sfxShotgun: {fileID: 8300000, guid: abaf1343012a40444ba32a4b30ce6172, type: 3}
-  sfxRocket: {fileID: 8300000, guid: abaf1343012a40444ba32a4b30ce6172, type: 3}
-  sfxSMG: {fileID: 8300000, guid: abaf1343012a40444ba32a4b30ce6172, type: 3}
+  sfx: {fileID: -8433823338074253934}
+  sfxHeal: {fileID: 8300000, guid: 2f4462e6d1fdd5e44a06dcf15885b94c, type: 3}
+  sfxRevolver: {fileID: 8300000, guid: db2d634a07ed7bf4c9a67f42fc64c936, type: 3}
+  sfxAR: {fileID: 8300000, guid: db2d634a07ed7bf4c9a67f42fc64c936, type: 3}
+  sfxSR: {fileID: 8300000, guid: db2d634a07ed7bf4c9a67f42fc64c936, type: 3}
+  sfxShotgun: {fileID: 8300000, guid: db2d634a07ed7bf4c9a67f42fc64c936, type: 3}
+  sfxRocket: {fileID: 8300000, guid: db2d634a07ed7bf4c9a67f42fc64c936, type: 3}
+  sfxSMG: {fileID: 8300000, guid: db2d634a07ed7bf4c9a67f42fc64c936, type: 3}
   sfxVolume: 0.88
---- !u!82 &6874623527237720963
+--- !u!82 &-8433823338074253934
 AudioSource:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -193,7 +193,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0

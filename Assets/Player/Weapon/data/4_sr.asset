@@ -20,9 +20,9 @@ MonoBehaviour:
   weakBonusMax: 50
   fireInterval: 1.5
   bulletsPerShot: 1
-  spreadDeg: 1
+  spreadDeg: 0.7
   bulletPrefab: {fileID: 6785224070344415373, guid: c8054da77ee8ac848a24b21b83e3d938, type: 3}
-  bulletSpeed: 30
+  bulletSpeed: 25
   bulletLifetime: 1
   infiniteAmmo: 0
   ammoInitial: 7

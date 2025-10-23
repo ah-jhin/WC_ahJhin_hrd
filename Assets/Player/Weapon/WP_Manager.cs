@@ -26,6 +26,11 @@ public class WP_Manager : MonoBehaviour
     int _cur = 0;                                // 현재 슬롯
     float _nextFireTime;                         // 다음 발사 가능 시각
 
+    [Header("효과음")]
+    public AudioSource audioSource;      // AudioSource
+    public AudioClip swapWeaponSFX;      // 무기 교체 시 재생할 효과음
+    public AudioClip dropWeaponSFX;      // 무기 드롭 시 재생할 효과음
+
     void Start()
     {
         // 0번 슬롯 보장
@@ -47,10 +52,44 @@ public class WP_Manager : MonoBehaviour
 
     void HandleSwapInput()
     {
-        if (Input.GetKeyDown(nextKey)) SwapNext();
-        if (Input.GetKeyDown(KeyCode.Alpha1)) SwapTo(0);
-        if (Input.GetKeyDown(KeyCode.Alpha2)) SwapTo(1);
-        if (Input.GetKeyDown(KeyCode.Alpha3)) SwapTo(2);
+        // 무기 변경 입력 처리: 무기 변경 발생 시 효과음 재생
+        if (Input.GetKeyDown(nextKey))
+        {
+            int prevIndex = _cur;
+            SwapNext();
+            // 이전 무기와 다른 무기로 실제로 변경된 경우에만 효과음 재생
+            if (audioSource != null && swapWeaponSFX != null && _cur != prevIndex)
+            {
+                audioSource.PlayOneShot(swapWeaponSFX);
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            int prevIndex = _cur;
+            SwapTo(0);
+            if (audioSource != null && swapWeaponSFX != null && _cur != prevIndex)
+            {
+                audioSource.PlayOneShot(swapWeaponSFX);
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            int prevIndex = _cur;
+            SwapTo(1);
+            if (audioSource != null && swapWeaponSFX != null && _cur != prevIndex)
+            {
+                audioSource.PlayOneShot(swapWeaponSFX);
+            }
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            int prevIndex = _cur;
+            SwapTo(2);
+            if (audioSource != null && swapWeaponSFX != null && _cur != prevIndex)
+            {
+                audioSource.PlayOneShot(swapWeaponSFX);
+            }
+        }
     }
 
     void HandleFireInput()
@@ -76,23 +115,24 @@ public class WP_Manager : MonoBehaviour
             OnWeaponEmpty(go.GetComponent<WP_Pistol>()); // 해당 무기 타입 전달(없으면 무시)
     }
     void HandleDropInput()
-{
-    if (!Input.GetKeyDown(dropKey)) return;
-
-    // 권총(슬롯0)은 드랍 금지
-    if (_cur == 0) return;
-
-    var go = GetActiveWeapon();
-    if (!go) return;
-
-    // 현재 무기 파괴 및 슬롯 비우기
-    Destroy(go);
-    weaponSlots[_cur] = null;
-
-    // 권총으로 복귀
-    _cur = 0;
-    ActivateCurrent();      // HUD/아이콘/쿨다운 갱신 포함
-}
+    {
+        if (!Input.GetKeyDown(dropKey)) return;
+        // 권총(slot 0)은 버리지 못함
+        if (_cur == 0) return;
+        var go = GetActiveWeapon();
+        if (!go) return;
+        // 현재 무기 파괴 및 슬롯 비우기
+        Destroy(go);
+        weaponSlots[_cur] = null;
+        // 0번 슬롯 (권총)으로 복귀
+        _cur = 0;
+        ActivateCurrent();
+        // 무기 드랍 효과음 재생 (AudioSource나 AudioClip이 없으면 재생하지 않음)
+        if (audioSource != null && dropWeaponSFX != null)
+        {
+            audioSource.PlayOneShot(dropWeaponSFX);
+        }
+    }
 
     // 무기 비었을 때 호출됨(무기가 SendMessageUpwards로 부름)
     void OnWeaponEmpty(object _)

@@ -27,7 +27,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     public AudioSource bgmAudioSource;     // 배경음악 AudioSource (음악 교체용)
 [SerializeField] private bool isDead = false; // ← 사망 여부 저장. 기본값 false
 
-	public bool IsDead => isDead;                 // ← 외부 읽기 전용 접근자
+    public bool IsDead => isDead;                 // ← 외부 읽기 전용 접근자
+    [Header("효과음(SFX)")]
+    public AudioSource sfx;
+    public AudioClip hurtSFX;
 
 	[Header("Pain 데미지 설정")]           // 'pain' 피해 값 설정
     public int painMin = 5;               // 'pain' 최소 피해량 
@@ -78,12 +81,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 		// 3) 체력 감소
 		currentHP = Mathf.Max(0, currentHP - final);
 
-		// 4) UI 갱신 지점(사용 중인 HUD 메서드 호출)
-		// Example: UIHUD.I.SetHP(currentHP, maxHP);
-
-		// 5) 피격 연출(선택)
-		// StartCoroutine(Blink());
-		// DamageNumberPool.I?.Spawn(transform.position, final, Color.red);
+		if (sfx && hurtSFX) sfx.PlayOneShot(hurtSFX);
 
 		// 6) 사망 처리
 		if (currentHP <= 0)
@@ -130,7 +128,9 @@ public void ApplyPain(int min, int max, float knockback, Vector3 srcPos)
 
     // 1) 난수 피해(정수)
     int dmg = Random.Range(Mathf.Min(min, max), Mathf.Max(min, max) + 1);
-    currentHP = Mathf.Max(0, currentHP - dmg);
+        currentHP = Mathf.Max(0, currentHP - dmg);
+
+    if (sfx && hurtSFX) sfx.PlayOneShot(hurtSFX);
 
     // 2) 랜덤 방향 넉백(좌/우 랜덤 + 약간 위로)
     float dir = Random.value < 0.5f ? -1f : 1f;

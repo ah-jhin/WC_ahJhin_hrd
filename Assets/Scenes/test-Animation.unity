@@ -947,7 +947,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.39215687}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.19607843}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1012,10 +1012,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 284288991}
-  - component: {fileID: 284288993}
+  - component: {fileID: 284288994}
   - component: {fileID: 284288992}
   m_Layer: 3
-  m_Name: State
+  m_Name: dummy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1029,13 +1029,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 284288990}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1701162142}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 2}
 --- !u!82 &284288992
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1133,29 +1133,24 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &284288993
-MonoBehaviour:
+--- !u!111 &284288994
+Animation:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 284288990}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 958754b035706924fba1b0a99d9a1960, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerState
-  idleClip: {fileID: 0}
-  moveClip: {fileID: 0}
-  jumpClip: {fileID: 0}
-  lookUpClip: {fileID: 0}
-  jumpLookUpClip: {fileID: 0}
-  jumpLookDownClip: {fileID: 0}
-  sfx: {fileID: 284288992}
-  moveSFX: {fileID: 0}
-  jumpSFX: {fileID: 8300000, guid: bef03a275617d59428b2e73063fa20dc, type: 3}
-  doubleJumpSFX: {fileID: 8300000, guid: 8ce9feea3ab3d2046a759db5d34bd28d, type: 3}
-  footstepInterval: 0.5
+  m_Enabled: 0
+  serializedVersion: 4
+  m_Animation: {fileID: 0}
+  m_Animations:
+  - {fileID: 7400000, guid: 0a1686c7fa7054549829d99346388142, type: 2}
+  - {fileID: 7400000, guid: 416869c86a2cd3940b7bd671e6d9cc4e, type: 2}
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_UpdateMode: 0
+  m_CullingType: 0
 --- !u!1 &287006626
 GameObject:
   m_ObjectHideFlags: 0
@@ -1185,7 +1180,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -1793,7 +1788,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9960785, g: 0.9960785, b: 0.9960785, a: 0.39215687}
+  m_Color: {r: 0.9960785, g: 0.9960785, b: 0.9960785, a: 0.27450982}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1868,7 +1863,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9960785, g: 0.9960785, b: 0.9960785, a: 0.39215687}
+  m_Color: {r: 0.9960785, g: 0.9960785, b: 0.9960785, a: 0.19607843}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -7017,7 +7012,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -9865,6 +9860,8 @@ GameObject:
   - component: {fileID: 1701162141}
   - component: {fileID: 1701162140}
   - component: {fileID: 1701162144}
+  - component: {fileID: 1701162149}
+  - component: {fileID: 1701162150}
   - component: {fileID: 1701162139}
   - component: {fileID: 1701162138}
   - component: {fileID: 1701162147}
@@ -10027,10 +10024,10 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -1779654435
+  m_SortingLayer: 1
   m_SortingOrder: 0
-  m_Sprite: {fileID: -855298285791758126, guid: 142e55185c951ea4a91b64ed42d4a1a6, type: 3}
+  m_Sprite: {fileID: -1686050137544660756, guid: 4f9912c89e3cb8d438dcc6ae456cc7b1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -10100,7 +10097,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 0}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -10242,8 +10239,8 @@ TrailRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.0028076172
-        value: 0.5128311
+        time: 0
+        value: 0.29764074
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -10252,7 +10249,7 @@ TrailRenderer:
         outWeight: 0.33333334
       - serializedVersion: 3
         time: 1
-        value: 0.06917897
+        value: 0.27804127
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -10304,6 +10301,47 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 0
   m_ApplyActiveColorSpace: 1
+--- !u!114 &1701162149
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1701162137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 958754b035706924fba1b0a99d9a1960, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerState
+  idleClip: {fileID: 7400000, guid: 0a1686c7fa7054549829d99346388142, type: 2}
+  moveClip: {fileID: 7400000, guid: 416869c86a2cd3940b7bd671e6d9cc4e, type: 2}
+  jumpClip: {fileID: 0}
+  lookUpClip: {fileID: 0}
+  jumpLookUpClip: {fileID: 0}
+  jumpLookDownClip: {fileID: 0}
+  sfx: {fileID: 284288992}
+  moveSFX: {fileID: 0}
+  jumpSFX: {fileID: 8300000, guid: bef03a275617d59428b2e73063fa20dc, type: 3}
+  doubleJumpSFX: {fileID: 8300000, guid: 8ce9feea3ab3d2046a759db5d34bd28d, type: 3}
+  footstepInterval: 0.5
+--- !u!111 &1701162150
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1701162137}
+  m_Enabled: 1
+  serializedVersion: 4
+  m_Animation: {fileID: 0}
+  m_Animations:
+  - {fileID: 7400000, guid: 0a1686c7fa7054549829d99346388142, type: 2}
+  - {fileID: 7400000, guid: 416869c86a2cd3940b7bd671e6d9cc4e, type: 2}
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_UpdateMode: 0
+  m_CullingType: 0
 --- !u!1 &1704761688
 GameObject:
   m_ObjectHideFlags: 0
@@ -10936,7 +10974,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.39215687}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
