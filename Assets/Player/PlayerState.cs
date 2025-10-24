@@ -120,8 +120,8 @@ public class PlayerState : MonoBehaviour
     /// </summary>
     private void PlaySFX(AudioClip clip)
     {
-        if (!clip || !sfx) return; // ★널 방어
-        sfx.PlayOneShot(clip);     // ★단발 재생
+        if (!clip || !sfx) return; // 널 방어
+        sfx.PlayOneShot(clip);     // 단발 재생
     }
     public void OnAnimEvent() { /* 빈 이벤트 처리용. 아무 것도 하지 않음. */ }
 

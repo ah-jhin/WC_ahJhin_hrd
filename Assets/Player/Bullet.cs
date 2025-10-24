@@ -21,8 +21,13 @@ public class Bullet : MonoBehaviour
     bool armed = false;                    // Inject 호출 전까지 비무장
     bool warned = false;                   // 경고 1회용
 
+    [Header("폭발(로켓 전용)")]
+    public bool aoeOnHit = false;          // true면 범위피해
+    public float aoeRadius = 2.5f;         // 반경(월드 단위)
+    public LayerMask aoeMask = ~0;         // 감지 레이어(기본 전체)
+    public GameObject explosionFx;         // 폭발 이펙트(선택)
+    public AudioClip explosionSfx;         // 폭발 SFX(선택)
     Collider2D col;
-
     void Awake()
     {
         col = GetComponent<Collider2D>();
@@ -73,17 +78,44 @@ public class Bullet : MonoBehaviour
     {
         if (!armed)
         {
-            if (!warned) { Debug.LogWarning("[Bullet] Inject()가 호출되기 전에 충돌했습니다."); warned = true; }
+            if (!warned) { Debug.LogWarning("[Bullet] Inject() 호출 전 충돌"); warned = true; }
             return;
         }
 
-        var target = other.GetComponent<IDamageable>();
-        if (target != null)
+        // 약점 판정(태그로만)
+        bool isWeak = other.CompareTag("WeakPoint");
+
+        if (aoeOnHit) // ★ 로켓 등
         {
-            bool isWeak = other.CompareTag("WeakPoint"); // ★ 약점은 태그로만 판정
-            target.TakeDamage(damage, isWeak, weakBonus);
+            // 폭발 이펙트/SFX
+            if (explosionFx) Instantiate(explosionFx, transform.position, Quaternion.identity);
+            if (explosionSfx)
+            {
+                Vector3 p = Camera.main ? Camera.main.transform.position : transform.position;
+                AudioSource.PlayClipAtPoint(explosionSfx, p, 1f);
+            }
+
+            // 중복 타격 방지용
+            System.Collections.Generic.HashSet<IDamageable> hit = new System.Collections.Generic.HashSet<IDamageable>();
+            var cols = Physics2D.OverlapCircleAll(transform.position, aoeRadius, aoeMask);
+            foreach (var c in cols)
+            {
+                var t = c.GetComponent<IDamageable>();
+                if (t == null || hit.Contains(t)) continue;
+
+                bool weakHere = c.CompareTag("WeakPoint"); // 범위 내 약점 콜라이더는 약점처리
+                t.TakeDamage(damage, weakHere, weakBonus);
+                hit.Add(t);
+            }
+        }
+        else // 단일 타격 탄
+        {
+            var target = other.GetComponent<IDamageable>();
+            if (target != null)
+                target.TakeDamage(damage, isWeak, weakBonus);
         }
 
-        Die();
+        Die(); // 충돌 후 소멸
     }
+
 }

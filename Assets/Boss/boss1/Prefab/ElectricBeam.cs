@@ -3,11 +3,11 @@ using UnityEngine;
 public class ElectricBeam : MonoBehaviour
 {
     [Header("Beam Settings")]
-    public float speed = 8f;              // ÁÂ¡ê¿ì ÀÌµ¿ ¼Óµµ
-    public int damage = 25;               // ´êÀ» ¶§ ÁÖ´Â ÇÇÇØ
-    public float maxLifeTime = 8f;        // ¾ÈÀü ¼Ò¸ê Å¸ÀÌ¸Ó
-    public Vector2 moveDir = Vector2.right; // +x ¶Ç´Â -x
-    public float ignorePlayerTime = 0.25f;  // ½ºÆù Á÷ÈÄ ¹«½Ã ½Ã°£
+    public float speed = 8f;              // ï¿½Â¡ï¿½ï¿½ ï¿½Ìµï¿½ ï¿½Óµï¿½
+    public int damage = 25;               // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½ï¿½ï¿½
+    public float maxLifeTime = 8f;        // ï¿½ï¿½ï¿½ï¿½ ï¿½Ò¸ï¿½ Å¸ï¿½Ì¸ï¿½
+    public Vector2 moveDir = Vector2.right; // +x ï¿½Ç´ï¿½ -x
+    public float ignorePlayerTime = 0.25f;  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½
 
     private float _spawnTime;
 
@@ -18,10 +18,10 @@ public class ElectricBeam : MonoBehaviour
 
     void Update()
     {
-        // ÀÌµ¿
+        // ï¿½Ìµï¿½
         transform.Translate(moveDir * speed * Time.deltaTime, Space.World);
 
-        // È­¸é ¹Û Á¦°Å
+        // È­ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         var cam = Camera.main;
         if (cam)
         {
@@ -29,22 +29,22 @@ public class ElectricBeam : MonoBehaviour
             if (vp.x < -0.2f || vp.x > 1.2f) Destroy(gameObject);
         }
 
-        // ¼ö¸í ÃÊ°ú ½Ã Á¦°Å
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½Ê°ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (Time.time - _spawnTime > maxLifeTime)
             Destroy(gameObject);
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // ½ºÆù Á÷ÈÄ Àá±ñ ¹«½Ã
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (Time.time - _spawnTime < ignorePlayerTime) return;
         if (!other.CompareTag("Player")) return;
 
-        // ´ë½¬ ÁßÀÌ¸é Åë°ú
+        // ï¿½ë½¬ ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½
         var pm = other.GetComponent<PlayerMovement>();
-        if (pm != null && pm.IsDashing) return;
+        if (pm != null && pm.isDashing) return;
 
-        // ÇÇ°Ý Ã³¸®
+        // ï¿½Ç°ï¿½ Ã³ï¿½ï¿½
         var hp = other.GetComponent<PlayerHealth>();
         if (hp != null)
             hp.TakeDamage(damage, false, 1f);

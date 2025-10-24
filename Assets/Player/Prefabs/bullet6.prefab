@@ -180,3 +180,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lifetime: 0
   defaultDamage: 1
+  aoeOnHit: 1
+  aoeRadius: 2.5
+  aoeMask:
+    serializedVersion: 2
+    m_Bits: 256
+  explosionFx: {fileID: 6039589988120180123, guid: 0b8151b66d128bf408595b8aa1df146c, type: 3}
+  explosionSfx: {fileID: 8300000, guid: 745e9996722965d4fbf622b6d4757a83, type: 3}

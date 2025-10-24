@@ -207,6 +207,7 @@ public bool AddWeapon(GameObject weaponPrefab, bool select = true)
 
     void ActivateCurrent()
     {
+        // 슬롯 활성/비활성
         for (int i = 0; i < weaponSlots.Length; i++)
             if (weaponSlots[i] != null) weaponSlots[i].SetActive(i == _cur);
 
@@ -215,8 +216,9 @@ public bool AddWeapon(GameObject weaponPrefab, bool select = true)
         var wi = go ? go.GetComponent<IWeaponInfo>() : null;
         if (hud && wi != null) hud.SetWeapon(wi.Icon, wi.DisplayName, wi.Ammo, wi.IsInfinite);
 
-        // 즉시 발사 가능
-        _nextFireTime = Time.time;
+        // ★ 쿨타임 리셋 금지
+        // _nextFireTime = Time.time;   // ← 삭제
+
         RefreshSlotIcons();
     }
 
