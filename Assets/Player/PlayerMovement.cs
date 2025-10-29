@@ -174,66 +174,69 @@ public class PlayerMovement : MonoBehaviour
 	}
 
 	// -----------------------
-	// 회피 입력 및 실행
+	// 대시 입력 및 실행
+	// -----------------------
 	// -----------------------
 	void HandleDashInput()
 	{
-		float h = Input.GetAxisRaw("Horizontal"); // -1,0,1
-		float v = Input.GetAxisRaw("Vertical");   // -1,0,1
+		// 입력/쿨타임/상태 가드
+		if (!Input.GetKeyDown(dashKey) || Time.time < nextDashTime || isDashing) return;
+		// 대각선 입력을 동시 반영
+		int h = (Input.GetKey(KeyCode.RightArrow) ? 1 : 0) - (Input.GetKey(KeyCode.LeftArrow) ? 1 : 0);
+		int v = (Input.GetKey(KeyCode.UpArrow) ? 1 : 0) - (Input.GetKey(KeyCode.DownArrow) ? 1 : 0);
 
-		Vector2 dir;
-		// 1) 위/아래 입력이 있으면 그대로 사용
-		if (Mathf.Abs(v) > 0.1f)
+		// 무입력일 때만 보정: 이동 중인 방향 또는 시선
+		if (h == 0 && v == 0)
 		{
-			dir = new Vector2(0, Mathf.Sign(v));
+			if (Mathf.Abs(rb.linearVelocity.x) > 0.1f)
+				h = (rb.linearVelocity.x > 0) ? 1 : -1;
+			else
+				h = (sr.flipX ? -1 : 1);
 		}
-		// 2) 좌/우 입력이 있으면 그대로 사용
-		else if (Mathf.Abs(h) > 0.1f)
+
+		// 방향별 파워 조합
+		float vx = (h == 0) ? 0f : Mathf.Sign(h) * dashPowerH;
+		float vy = 0f;
+		if (v > 0) vy = dashPowerV;
+		else if (v < 0) vy = -dashPowerDown;
+
+		// 대각선 전용 강도 우선
+		if (h != 0 && v != 0 && dashPowerDiagonal > 0f)
 		{
-			dir = new Vector2(Mathf.Sign(h), 0);
+			Vector2 ndir = new Vector2(h, v).normalized;
+			StartCoroutine(DashRoutine(ndir * dashPowerDiagonal));
 		}
-		// 3) 입력이 없으면 ‘이동 중인 방향’(현재 속도)으로 대시
-		else if (Mathf.Abs(rb.linearVelocity.x) > 0.1f)
-		{
-			dir = new Vector2(Mathf.Sign(rb.linearVelocity.x), 0);
-		}
-		// 4) 그래도 결정 못하면 마지막으로 시선 방향
 		else
 		{
-			dir = new Vector2(sr.flipX ? -1 : 1, 0);
+			StartCoroutine(DashRoutine(new Vector2(vx, vy)));
 		}
 
-		float power = (dir.y > 0.1f) ? dashPowerV
-				: (dir.y < -0.1f) ? dashPowerDown
-				: dashPowerH;
 
-		StartCoroutine(DashRoutine());
-	}
+		// 완성된 속도 벡터를 받아 즉시 속도로 적용
+		IEnumerator DashRoutine(Vector2 dashVelocity)
+		{
+			isDashing = true;
+			nextDashTime = Time.time + dashCooldown;
 
-	// 완성된 속도 벡터를 받아 즉시 속도로 적용
-	IEnumerator DashRoutine(Vector2 dashVelocity)
-	{
-		isDashing = true;
-		nextDashTime = Time.time + dashCooldown;
+			// 회피 사운드(선택)
+			if (sfx && sfxDash) sfx.PlayOneShot(sfxDash, AudioBus.SFX);
 
-		// 회피 사운드(선택)
-		if (sfx && sfxDash) sfx.PlayOneShot(sfxDash, AudioBus.SFX);
+			// 트레일 ON
+			if (dashTrail) dashTrail.emitting = true;
 
-		// 트레일 ON
-		if (dashTrail) dashTrail.emitting = true;
+			// 기존 속도를 조금 줄인 다음 지정 속도로 고정
+			rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, rb.linearVelocity.y * 0.2f);
+			rb.linearVelocity = dashVelocity;
 
-		// 기존 속도를 조금 줄인 다음 지정 속도로 고정
-		rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.2f, rb.linearVelocity.y * 0.2f);
-		rb.linearVelocity = dashVelocity;
+			// 잠금 시간
+			float end = Time.time + dashDuration;
+			while (Time.time < end) yield return null;
 
-		// 잠금 시간
-		float end = Time.time + dashDuration;
-		while (Time.time < end) yield return null;
+			// 트레일 OFF
+			if (dashTrail) dashTrail.emitting = false;
 
-		// 트레일 OFF
-		if (dashTrail) dashTrail.emitting = false;
-
-		isDashing = false;
+			isDashing = false;
+		}
 	}
 
 	// ▼ 추가: 방향별 파워를 적용해 최종 대시 속도를 만든다.
