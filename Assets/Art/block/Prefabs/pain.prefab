@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 3230420431617291011}
   - component: {fileID: 2836171488270405446}
   - component: {fileID: 266466905874516466}
+  - component: {fileID: 4930073996618857231}
   m_Layer: 0
   m_Name: pain
   m_TagString: pain
@@ -154,3 +155,37 @@ PolygonCollider2D:
       - {x: 2.45, y: -2.04}
       - {x: -2.45, y: -2.04}
   m_UseDelaunayMesh: 0
+--- !u!114 &4930073996618857231
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 713982986041194362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d24e5a4284aad34d8ee753d13b05e4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::pain
+  minDamage: 5
+  maxDamage: 10
+  knockback: 20
+  localInvincible: 0.5
+  destroyOnTouch: 0
+  touchPrefab: {fileID: 0}
+  touchVFX: {fileID: 0}
+  touchSFX: {fileID: 0}
+  useGravity: 0
+  gravityScale: 1
+  checkBlockCollision: 1
+  destroyOnBlock: 1
+  blockHitPrefab: {fileID: 0}
+  blockHitVFX: {fileID: 0}
+  blockHitSFX: {fileID: 0}
+  autoDespawn: 0
+  despawnAfter: 10
+  despawnPrefab: {fileID: 0}
+  despawnVFX: {fileID: 0}
+  despawnSFX: {fileID: 0}
+  playerTag: Player
+  blockTag: block

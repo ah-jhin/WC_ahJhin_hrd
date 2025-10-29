@@ -1571,7 +1571,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 599369347}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -2672,7 +2672,7 @@ SpriteRenderer:
   m_SortingLayer: 1
   m_SortingOrder: 1
   m_Sprite: {fileID: 21300000, guid: ffc80c129c9aca14c9fb4dbeba0e10d2, type: 3}
-  m_Color: {r: 0.96096015, g: 1, b: 0.495283, a: 1}
+  m_Color: {r: 0.8632076, g: 1, b: 0.87887007, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 2
@@ -5788,8 +5788,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0f1ad134180b1ec40b63411e000e984f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossSequenceController
-  bossPrefab: {fileID: 8805404381573595782, guid: 02973d5308f65264f82d98dfc60cc402, type: 3}
-  bossWorldPos: {x: 0, y: 3.7, z: 0}
+  bossPrefab: {fileID: 8805404381573595782, guid: 7ddc64c5e5dc7a648a660a9ce62f3149, type: 3}
+  bossWorldPos: {x: 5, y: 0, z: 0}
   bossBarRoot: {fileID: 1787125110}
   hpSlider: {fileID: 1787125111}
   hpText: {fileID: 1388617552}
@@ -5814,8 +5814,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0a06d19842024fb43860b959c9e58d55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossBase
-  maxHP: 500
-  bossName: "\uAC00\uC774\uC544, \uAC15\uCCA0\uC758 \uB300\uC9C0"
+  maxHP: 1500
+  bossName: "\uC5C4\uC900"
   actor: {fileID: 0}
   bossBarRoot: {fileID: 1787125110}
   hpSlider: {fileID: 1787125111}
