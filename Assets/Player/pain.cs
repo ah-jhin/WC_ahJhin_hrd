@@ -1,10 +1,11 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// 오브젝트와 '접촉' 시 플레이어에게 피해를 주는 함정/투사체용 스크립트
-/// - 태그: Player, block 사용
-/// - 이 스크립트의 '무적 시간'이 PlayerHealth 무적보다 우선한다(오버로드 호출).
-/// - 트리거/충돌 둘 다 지원(OnTriggerEnter2D / OnCollisionEnter2D)
+/// 오브젝트와 '접촉' 시 플레이어에게 피해를 주는 함정/투사체용 스크립트  
+/// - 태그: Player, block 사용  
+/// - 이 스크립트의 '무적 시간'이 PlayerHealth 무적보다 우선한다(오버로드 호출).  
+/// - 트리거/충돌 둘 다 지원(OnTriggerEnter2D / OnCollisionEnter2D)  
+/// - 투사체 속도, 좌표 추적, 플레이어 추적, 관성(중력), 크기 증가 기능 추가  
 /// </summary>
 [AddComponentMenu("Game/Pain")]
 [DisallowMultipleComponent]
@@ -46,6 +47,20 @@ public class pain : MonoBehaviour
     [Tooltip("블럭 충돌 시 SFX")]
     public AudioClip blockHitSFX;
 
+    [Header("이동")]
+    [Tooltip("투사체 이동 속도")]
+    public float speed = 0f;
+    [Tooltip("추적할 목표 좌표 (월드 좌표)")]
+    public Vector2 targetPosition;
+    [Tooltip("플레이어를 지속 추적할지 여부")]
+    public bool trackPlayer = false;
+    [Tooltip("관성(물리) 적용 여부")]
+    public bool useInertia = false;
+    [Tooltip("관성/중력 값 (Rigidbody2D.gravityScale로 적용)")]
+    public float inertiaValue = 1f;
+    [Tooltip("시간 경과에 따라 투사체 크기 증가 여부")]
+    public bool increaseSize = false;
+
     [Header("소멸(타이머)")]
     [Tooltip("시간 경과로 자동 소멸할지 여부")]
     public bool autoDespawn = false;
@@ -68,6 +83,9 @@ public class pain : MonoBehaviour
     Rigidbody2D _rb;
     Collider2D _col;
     AudioSource _audio;
+    // 이동/추적 관련 내부 변수
+    Transform _playerTransform;  // 플레이어 추적 대상 Transform
+    bool _arrived = false;       // 목표 지점 도달 여부
 
     // 이 함정 자체의 쿨다운(한 플레이어 게임 가정)
     float _nextTouchTime = 0f;
@@ -79,8 +97,13 @@ public class pain : MonoBehaviour
         _audio = GetComponent<AudioSource>();
         if (_audio == null) _audio = gameObject.AddComponent<AudioSource>();
 
-        // 중력 설정
-        if (useGravity)
+        // 관성/중력 설정 및 Rigidbody2D 구성
+        if (useInertia)
+        {
+            if (_rb == null) _rb = gameObject.AddComponent<Rigidbody2D>();
+            _rb.gravityScale = inertiaValue;
+        }
+        else if (useGravity)
         {
             if (_rb == null) _rb = gameObject.AddComponent<Rigidbody2D>();
             _rb.gravityScale = gravityScale;
@@ -89,10 +112,136 @@ public class pain : MonoBehaviour
         {
             _rb.gravityScale = 0f;
         }
+        // 이동 기능 사용 시 Rigidbody2D 생성 보장
+        if (_rb == null && (speed != 0f || trackPlayer || targetPosition != Vector2.zero))
+        {
+            _rb = gameObject.AddComponent<Rigidbody2D>();
+            _rb.gravityScale = 0f;
+        }
 
         // 자동 소멸 타이머
         if (autoDespawn)
             Invoke(nameof(DoDespawn), Mathf.Max(0.01f, despawnAfter));
+    }
+
+    void Start()
+    {
+        // 플레이어 추적 대상 찾기
+        if (trackPlayer)
+        {
+            GameObject playerObj = GameObject.FindWithTag(playerTag);
+            if (playerObj != null)
+                _playerTransform = playerObj.transform;
+        }
+
+        // 초기 이동 속도 설정 (추적 없음 상태에서 발사 방향 지정)
+        if (!trackPlayer && targetPosition == Vector2.zero && speed != 0f && _rb != null)
+        {
+            // 오브젝트가 바라보는 방향으로 초기 속도 부여
+            _rb.linearVelocity = transform.right * speed;
+        }
+    }
+
+    void FixedUpdate()
+    {
+        // 좌표 추적용 도달 여부 확인 (이미 도달한 경우 이동 중지)
+        if (_arrived) return;
+
+        // 1) 플레이어 지속 추적
+        if (trackPlayer && _playerTransform != null)
+        {
+            // 플레이어 방향 단위 벡터 계산
+            Vector2 dir = (_playerTransform.position - transform.position).normalized;
+            if (_rb != null)
+            {
+                if (useInertia || useGravity)
+                {
+                    // 관성/중력 적용: 수평 속도만 목표 방향으로 조절 (수직은 중력에 맡김)
+                    float targetVelX = dir.x * speed;
+                    if (useInertia)
+                    {
+                        // 부드러운 추적: 수평 속도를 서서히 변경
+                        _rb.linearVelocity = new Vector2(Mathf.MoveTowards(_rb.linearVelocity.x, targetVelX, speed * 2f * Time.fixedDeltaTime), _rb.linearVelocity.y);
+                    }
+                    else
+                    {
+                        // 즉시 추적: 수평 속도를 즉시 변경
+                        _rb.linearVelocity = new Vector2(targetVelX, _rb.linearVelocity.y);
+                    }
+                }
+                else
+                {
+                    // 중력 미사용: 목표 방향으로 바로 이동
+                    _rb.linearVelocity = dir * speed;
+                }
+            }
+            else
+            {
+                // (예외 처리) Rigidbody2D가 없을 경우 Transform 이동
+                transform.position = Vector2.MoveTowards(transform.position, _playerTransform.position, speed * Time.deltaTime);
+            }
+        }
+        // 2) 지정된 좌표로 이동
+        else if (!trackPlayer && targetPosition != Vector2.zero)
+        {
+            Vector2 targetPos = targetPosition;
+            float dist = Vector2.Distance(transform.position, targetPos);
+            if (dist <= speed * Time.fixedDeltaTime)
+            {
+                // 목표 지점 도달: 정확한 위치로 설정하고 정지
+                transform.position = targetPos;
+                if (_rb != null)
+                {
+                    _rb.linearVelocity = Vector2.zero;
+                    // 관성/중력 사용 중이면 중력 비활성화 (제자리 유지)
+                    if (useInertia || useGravity) _rb.gravityScale = 0f;
+                }
+                _arrived = true;
+            }
+            if (!_arrived)
+            {
+                // 목표를 향해 이동 지속
+                Vector2 dir = (targetPos - (Vector2)transform.position).normalized;
+                if (_rb != null)
+                {
+                    if (useInertia || useGravity)
+                    {
+                        float targetVelX = dir.x * speed;
+                        if (useInertia)
+                        {
+                            _rb.linearVelocity = new Vector2(Mathf.MoveTowards(_rb.linearVelocity.x, targetVelX, speed * 2f * Time.fixedDeltaTime), _rb.linearVelocity.y);
+                        }
+                        else
+                        {
+                            _rb.linearVelocity = new Vector2(targetVelX, _rb.linearVelocity.y);
+                        }
+                    }
+                    else
+                    {
+                        _rb.linearVelocity = dir * speed;
+                    }
+                }
+                else
+                {
+                    transform.position = Vector2.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);
+                }
+            }
+        }
+        // 3) 이동/추적 기능 없음
+        else
+        {
+            // 초기 속도나 중력에 의한 이동만 처리됨 (추가 업데이트 불필요)
+        }
+    }
+
+    void Update()
+    {
+        // 크기 증가 처리
+        if (increaseSize)
+        {
+            // 시간이 지날수록 투사체 크기 증가 (초당 약 0.1 단위)
+            transform.localScale += Vector3.one * 0.1f * Time.deltaTime;
+        }
     }
 
     // --------- 트리거 방식 ----------

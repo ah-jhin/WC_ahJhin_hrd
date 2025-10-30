@@ -51,6 +51,12 @@ public class Bullet : MonoBehaviour
         CancelInvoke(nameof(Die));
         if (lifetime > 0f) Invoke(nameof(Die), lifetime);
     }
+    // ★ 해당 콜라이더가 속한 보스가 인트로 무적인지 확인
+    bool IsBossIntro(Collider2D col)
+    {
+        var boss = col.GetComponentInParent<BossBase>();
+        return boss != null && boss.IsIntroNoScore;
+    }
 
     /// <summary>
     /// 무기에서 피해/약점 보너스를 주입한다. 호출 시 충돌을 활성화(무장)한다.
@@ -118,8 +124,12 @@ public class Bullet : MonoBehaviour
                     (c.transform.root && c.transform.root.CompareTag("Boss")) ? "Boss" :
                     (c.CompareTag("Boss") ? "Boss" : null);
 
+                // ▼ 점수 반영(인트로 무적이면 스킵)
                 if (GameScore.I != null && !string.IsNullOrEmpty(scoreTag))
-                    GameScore.I.OnDealDamage(scoreTag, dealt);
+                {
+                    if (!IsBossIntro(c))
+                        GameScore.I.OnDealDamage(scoreTag, dealt);
+                }
             }
         }
         else // 단일 타격 탄
@@ -136,11 +146,14 @@ public class Bullet : MonoBehaviour
                     (other.transform.root && other.transform.root.CompareTag("Boss")) ? "Boss" :
                     (other.CompareTag("Boss") ? "Boss" : null);
 
+                // ▼ 점수 반영(인트로 무적이면 스킵)
                 if (GameScore.I != null && !string.IsNullOrEmpty(scoreTag))
-                    GameScore.I.OnDealDamage(scoreTag, dealt);
+                {
+                    if (!IsBossIntro(other))
+                        GameScore.I.OnDealDamage(scoreTag, dealt);
+                }
             }
         }
-
         Die(); // // 충돌 후 소멸
     }
 }

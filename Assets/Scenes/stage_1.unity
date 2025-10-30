@@ -5456,6 +5456,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1787125110}
   - component: {fileID: 1787125111}
+  - component: {fileID: 1787125112}
   m_Layer: 5
   m_Name: BossHPBar
   m_TagString: Untagged
@@ -5536,6 +5537,18 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1787125112
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1787125109}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 309b5e9fbd875a247b556035d29e5405, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossBarMarker
 --- !u!1 &1833221295
 GameObject:
   m_ObjectHideFlags: 0
@@ -5857,7 +5870,7 @@ MonoBehaviour:
   sfxAppear: {fileID: 8300000, guid: fbcbe6df829daa24683de8faabf973e5, type: 3}
   sfxDisappear: {fileID: 8300000, guid: 5e59d58826ed41c40820d4ba6688c905, type: 3}
   fxAppear: {fileID: 0}
-  fxDisappear: {fileID: 8696970788581002644, guid: 94bc2b3dce385f04b84245f050bf5edc, type: 3}
+  fxDisappear: {fileID: 8696970788581002644, guid: 3a18a494e9eff284abe7dc3a425e93dd, type: 3}
   audioSrc: {fileID: 1848770945}
   introInvincible: 1
   introSuppressThreshold: 1
@@ -6016,7 +6029,7 @@ MonoBehaviour:
   bossAutoDelay: 5
   menuKey: 114
   fadeCanvasGroup: {fileID: 0}
-  fadeDuration: 0.5
+  fadeDuration: 1
   fadeInOnSceneStart: 1
   useUnscaledTime: 1
 --- !u!1001 &1904289931
